@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly>
+      <id>lab</id>
+      <includeBaseDirectory>false</includeBaseDirectory>
+      <formats>
+            <format>zip</format>
+      </formats>
+      <fileSets>
+            <fileSet>
+                  <includes>
+                        <include>${project.basedir}/.project</include>
+                        <include>${project.basedir}/.classpath</include>
+                        <include>${project.basedir}/.settings/**/*</include>
+                        <include>${project.basedir}/.springBeans</include>
+                        <include>${project.basedir}/pom.xml</include>
+                  </includes>
+                  <outputDirectory>${project.artifactId}</outputDirectory>
+                  <useDefaultExcludes>true</useDefaultExcludes>
+            </fileSet>
+            <fileSet>
+                  <includes>
+                        <include>${project.basedir}/src/main/**/*</include>
+                        <include>${project.basedir}/src/test/**/*</include>
+                  </includes>
+                  <outputDirectory>${project.artifactId}</outputDirectory>
+                  <useDefaultExcludes>true</useDefaultExcludes>
+            </fileSet>
+            <fileSet>
+                <directory>instructions</directory>
+                <outputDirectory>${project.artifactId}-instructions</outputDirectory>
+                <includes>
+                    <include>*</include>
+                    <include>**</include>
+                </includes>
+            </fileSet>
+      </fileSets>
+</assembly>

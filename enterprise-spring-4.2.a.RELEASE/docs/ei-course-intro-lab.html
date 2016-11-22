@@ -1,0 +1,351 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;1.&nbsp;ei-course-intro: Introduction to Enterprise Spring</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="reference-domain.html" title="Reward Dining: The Course Reference Domain"><link rel="next" href="tasks-lab.html" title="Chapter&nbsp;2.&nbsp;tasks: Tasks and Scheduling"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="ei-course-intro-lab"></a>Chapter&nbsp;1.&nbsp;ei-course-intro: Introduction to Enterprise Spring</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="ei-course-intro-lab-introduction"></a>1.1.&nbsp;Introduction</h2></div></div></div><p>Welcome to <span class="emphasis"><em>Enterprise Spring</em></span>.
+    In this lab you'll come to understand the basic workings of the
+    <span class="emphasis"><em>Reward Network</em></span> reference application and you'll be
+    introduced to the tools you'll use throughout the course.</p><p>The lab is broken into four major sections. In the first section
+    you'll get up and running with the Spring Tool Suite and get to know
+    the project structure and Maven-based build system.</p><p>In the second section, you'll get an overview of the 'Reward
+    Network' application domain and API that will be used throughout the
+    course.</p><p>In the third section, you'll finish testing and implementing a
+    simple command-line user interface for the Reward Network
+    application.</p><p>In the fourth section, you'll monitor UI application activity using
+    Spring's support for JMX.</p><p>Have fun with the steps below, and remember that the goal is to get
+    comfortable with the tools and application domain concepts. <span class="emphasis"><em>If
+    you get stuck, don't hesitate to ask for help!</em></span></p><div class="orderedlist"><p class="title"><b>What you will learn</b></p><ol type="1"><li><p>Basic features of the Spring Tool Suite</p></li><li><p>Core <span class="emphasis"><em>RewardNetwork</em></span> domain and API</p></li><li><p>Review Spring JMX features and usage of JConsole</p></li></ol></div><p>Estimated time to complete: 45 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="ei-course-intro-lab-quick-instructions"></a>1.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions.</p><div class="orderedlist"><ol type="1"><li><p><span class="bold"><strong>Getting Started with the Spring Tool
+        Suite (STS)</strong></span> (<a href="ei-course-intro-lab.html#ei-course-intro-lab-instructions" title="1.3.&nbsp;Instructions">details</a>)</p><p>Launch STS. Browse through the working sets and projects to make
+        yourself familiar with the Tool Suite, and how the lab projects that
+        you will be completing in this course are structured. You might also
+        have to configure STS to view the TODOs in the Task pane.</p></li><li><p><span class="bold"><strong>Understanding the 'Reward Network'
+        Application Domain and API</strong></span> (<a href="ei-course-intro-lab.html#Understanding-the-RN" title="1.3.2.&nbsp;Understanding the 'Reward Network' Application Domain and&#xA;      API">details</a>)</p><p>Please review <span class="emphasis"><em>Reward Dining: The Course Reference
+        Domain</em></span> in the preface to this handout for understanding the
+        background of the Reward Network application domain. Once completed,
+        execute the following steps:</p><div class="orderedlist"><ol type="a"><li><p>Visualize RewardNetwork bean graph with STS (navigate to 
+						00-reward-network-&gt;rewards/src/main/resources and open 
+						app-config.xml).</p></li><li><p>Follow TODO 01 and run the DiningEntryUI application.  
+						Enter the following details </p><p>Dining Amount: 100</p><p>Member credit card number: 1234123412341234</p><p>Merchant number: 1234567890</p><p>Would you like to enter another Dining transaction? [y/n]: n</p></li><li><p>Complete TODO 02 - 03 and execute the JUnit test. The test 
+						will fail.</p></li><li><p>Complete TODO 04 and execute the JUnit test. This time the 
+						test will pass.</p></li><li><p>Redo TODO 01 to verify that the interactive dining entry works as expected. It should return a confirmation now.</p></li><li><p>Complete TODO 05 - 07 to apply JMX metadata to 
+						DiningEntry. (<a href="ei-course-intro-lab.html#applyJMXMetadata" title="1.3.2.8.&nbsp;Step 7: Apply JMX metadata to&#xA;        DiningEntry">details</a>)</p></li><li><p>Complete TODO 08 to enable automatic registration of 
+						DiningEntry as a JMX MBean. (<a href="ei-course-intro-lab.html#enableJmxRegistration" title="1.3.2.9.&nbsp;Step 8: Enable automatic registration of&#xA;        DiningEntry as a JMX MBean">details</a>)</p></li><li><p>Complete TODO 09 by launching DiningEntryUI and monitoring its 
+						statistics via JConsole. (<a href="ei-course-intro-lab.html#verifyWithJMX" title="1.3.2.10.&nbsp;Step 9: Launch DiningEntryUI and&#xA;      monitor its statistics via JConsole">details</a>)</p></li></ol></div></li></ol></div><p>Congratulations, you've completed this lab!</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="ei-course-intro-lab-instructions"></a>1.3.&nbsp;Instructions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e319"></a>1.3.1.&nbsp;Getting Started with the Spring Tool Suite</h3></div></div></div><p>The Spring Tool Suite (STS) is a free and enterprise-grade
+      IDE built on the Eclipse Platform. In this section, you will become
+      familiar with the Tool Suite and how the lab projects that you will be
+      completing in this course are structured.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e324"></a>1.3.1.1.&nbsp;Step 1: Launch the Tool Suite</h4></div></div></div><p>Launch the Spring Tool Suite by using the shortcut link on
+        your desktop or from the <span class="emphasis"><em>sts-xxx</em></span> directory where you installed
+        the course content. You will see the STS splash image appear.
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e332"></a>1.3.1.2.&nbsp;Understanding Eclipse/STS project structure</h4></div></div></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">If you've just opened STS, it may still be starting up. Wait
+        several moments until the progress indicator on the bottom right
+        finishes. When complete, you should have no red error markers within
+        the <span class="emphasis"><em>Package Explorer</em></span> or
+        <span class="emphasis"><em>Problems</em></span> views.</td></tr></table></div><p>Now that STS is up and running, you'll notice that within the
+        <span class="emphasis"><em>Package Explorer</em></span> view on the left, projects are
+        organized by <span class="emphasis"><em>Working Sets</em></span>. Working Sets are
+        essentially folders that contain a group of Eclipse projects.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e351"></a>1.3.1.3.&nbsp;Step 2: Browse Working Sets and projects</h4></div></div></div><p>If it is not already open, expand the
+        <span class="emphasis"><em>01-ei-course-intro</em></span> Working Set. Within you'll
+        find two projects: <span class="emphasis"><em>ei-course-intro</em></span> and
+        <span class="emphasis"><em>ei-course-intro-solution</em></span>. This pair of projects
+        is a common pattern throughout the labs in this course. Clearly one is
+        the solution which we have completed for you, the other is the one you
+        will work on - the <span class="emphasis"><em>working</em></span> project. For each lab,
+        you will follow the directions to complete the working project, and
+        when finished, you can check your work against the
+        <span class="emphasis"><em>solution</em></span> to compare your implementation to that
+        of the course designers.</p><p>
+        All lab projects are imported as plain Eclipse projects, even
+        the Maven POM file for each project is present. You can have
+        a look at the POM files if you want, but don't modify them!
+        Let's have a look to the dependencies of the projects. 
+        </p><p>Open the <span class="emphasis"><em>working</em></span> project
+        (<span class="emphasis"><em>ei-course-intro</em></span>) and expand its
+        <span class="emphasis"><em>Referenced Libraries</em></span> node. Look at the dependencies. 
+        For the most part, these dependencies are straightforward and
+        probably similar to what you're used to in your own projects. For
+        example, there are several dependencies on Spring Framework jars, on
+        Hibernate, DOM4J, etc.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top">Note that all dependencies have been pre-installed as part
+        of the training environment, so no network access is required to
+        resolve and download jar files. This is accomplished by setting the
+        M2_REPO classpath variable to point to the directory where the
+        repository is located.</td></tr></table></div><p>If you examine the project's build path, you will also notice
+        that the <span class="emphasis"><em>ei-course-intro</em></span> project has a dependency
+        on the <code class="literal">rewards</code> project contained in the
+        <code class="literal">00-reward-network</code> Working Set. In the next section
+        you'll get to know the <code class="literal">rewards</code> project in
+        detail.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e400"></a>1.3.1.4.&nbsp;Step 3: Configure the TODOs in STS</h4></div></div></div><p>You will often be asked to work with TODO instructions. They are
+        displayed in the <code class="literal">Tasks</code> view in Eclipse/STS. If not
+        already displayed, click on <code class="literal">Window -&gt; Show View -&gt;
+        Tasks</code> (be careful, <span class="emphasis"><em>not <code class="literal">Task
+        List</code></em></span>). If you can't see the
+        <code class="literal">Tasks</code> view, try clicking <code class="literal">Other
+        ...</code> and looking under <code class="literal">General</code>.</p><p>By default, you see the TODOs for all the active projects in
+        Eclipse/STS. To limit the TODOs for a specific project, execute the
+        steps summarized in the following screenshots:</p><!--NEW FIGURE DIV--><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="text-align: center"><div xmlns="" class="figure"><a name="task1"></a><div class="figure-contents"><div class="mediaobject" align="center"><img src="images/Task1.png" align="middle" alt="Configure TODOs"></div></div><p class="title"><b>Figure&nbsp;1.1.&nbsp;Configure TODOs</b></p></div><br xmlns="" class="figure-break"></div><!--NEW FIGURE DIV--><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="text-align: center"><div xmlns="" class="figure"><a name="task2"></a><div class="figure-contents"><div class="mediaobject" align="center"><img src="images/Task2.png" align="middle" alt="Configure TODOs"></div></div><p class="title"><b>Figure&nbsp;1.2.&nbsp;Configure TODOs</b></p></div><br xmlns="" class="figure-break"></div><p><span class="bold"><strong>Caution: </strong></span>It is possible, you
+        might not be able to see the TODOs defined within the XML files. In
+        this case, you can check the configuration in <code class="literal">Preferences
+        -&gt; General -&gt; Editors -&gt; Structured Text Editor -&gt; Task
+        Tags</code> pane. Make sure <code class="literal">Enable searching for Task
+        Tags</code> is selected. On the <code class="literal">Filters</code> tab,
+        verify if XML content type is selected. In case of refresh issues, you
+        may have to uncheck it and then check it again.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="Understanding-the-RN"></a>1.3.2.&nbsp;Understanding the 'Reward Network' Application Domain and
+      API</h3></div></div></div><p>Please review <span class="emphasis"><em>Reward Dining: The Course Reference
+      Domain</em></span> in the preface to this handout if you haven't done so
+      already. This document will
+      guide you through understanding the background of the Reward Network
+      application domain and thus provide context for the rest of the course.
+      There are no tasks for you to complete within this document, it is
+      simply for your understanding. Once you are finished reading, return
+      here and carry on with the rest of this section.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e460"></a>1.3.2.1.&nbsp;Step 1: Review the <span class="emphasis"><em>RewardNetwork</em></span>
+        business classes</h4></div></div></div><p>In the Package Explorer view, navigate to
+	      <span class="emphasis"><em>00-reward-network-&gt;rewards/src/main/resources</em></span>
+	      and open <span class="emphasis"><em>app-config.xml</em></span>. Take a moment to review
+	      this Spring configuration file and notice that it configures a bean of
+	      type <span class="emphasis"><em>RewardNetworkImpl</em></span> that depends on three
+	      <span class="emphasis"><em>Repository</em></span> beans for data access.</p><p>We will make extensive use of this simple POJO application layer
+	      throughout this course. No matter what the integration task, this
+	      portable business and data access logic will remain the same.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e482"></a>1.3.2.2.&nbsp;Step 2: Review <span class="emphasis"><em>DiningEntryUI</em></span>
+        application</h4></div></div></div><p>Open (<span class="emphasis"><em>CTRL-SHIFT-T</em></span>)
+        <span class="emphasis"><em>rewards.ui.DiningEntryUI</em></span> from within the
+        <span class="emphasis"><em>ei-course-intro</em></span> project.</p><p>Notice that this very simple class consists of nothing more than
+        a <span class="emphasis"><em>main()</em></span> method that bootstraps a Spring
+        <span class="emphasis"><em>ApplicationContext</em></span> and invokes a
+        <code class="methodname">start()</code> method on a
+        <code class="classname">DiningEntry</code> bean instance. In a moment, we'll
+        run this application and interact with it using the console.</p><p>First, take a look at the Spring XML consumed by the
+        <span class="emphasis"><em>ApplicationContext</em></span>. Open
+        (<span class="emphasis"><em>CTRL-SHIFT-R</em></span>)
+        <span class="emphasis"><em>diningentry-config.xml</em></span> in the
+        <span class="emphasis"><em>ei-course-intro</em></span> project.</p><p>Notice that this file consists of two
+        <span class="emphasis"><em>&lt;import&gt;</em></span> statements and a bean definition
+        that wires up a <span class="emphasis"><em>DiningEntry</em></span> bean. 
+        The <span class="emphasis"><em>DiningEntry</em></span> gets injected with
+        the very same <span class="emphasis"><em>RewardNetworkImpl</em></span> bean that we saw
+        in the original <span class="emphasis"><em>app-config.xml</em></span> file.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e544"></a>1.3.2.3.&nbsp;Step 3: Launch <span class="emphasis"><em>DiningEntryUI</em></span> command-line
+        application</h4></div></div></div><p>Let's see what happens if we run the application in its current
+        state.</p><p>Open (<span class="emphasis"><em>CTRL-SHIFT-T</em></span>) the
+        <span class="emphasis"><em>DiningEntryUI</em></span> class once again. Right-click
+        anywhere in the source file and navigate to <span class="emphasis"><em>Run As-&gt;Java
+        Application</em></span> (or use <span class="emphasis"><em>ALT-SHIFT-X + J</em></span>).
+        You should see the following at the console:</p><pre class="programlisting">
+Welcome to the Reward Network dining entry UI
+
+Please enter the following information to create and 
+                      process a new dining transaction
+	
+Dining amount:
+
+    </pre><p>Type <span class="emphasis"><em>100</em></span> for the dining amount and hit
+        Enter. Next, you'll be prompted for</p><p>
+          </p><pre class="programlisting">
+Member credit card number:
+    </pre><p>
+        </p><p>Type <span class="emphasis"><em>1234123412341234</em></span> and Enter. Finally
+        you'll be asked for:</p><pre class="programlisting">
+Merchant number:
+    </pre><p>Type <span class="emphasis"><em>1234567890</em></span> and Enter.</p><p>You should now see:</p><pre class="programlisting">
+Dining of $100.00 charged to '1234123412341234' 
+                      by '1234567890' on 4/24/09 12:00 AM
+   
+Rewarding account for dining via RewardNetwork...
+Result: null
+	
+Would you like to enter another Dining transaction? [y/n]: 
+
+    </pre><p>Notice the <span class="emphasis"><em>Result: null</em></span> above? It appears
+        that there is something wrong with the implementation.</p><p>Enter '<span class="emphasis"><em>n</em></span>' to end the process and then move
+        on to the next step where you'll diagnose and fix the problem.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e604"></a>1.3.2.4.&nbsp;Step 4: Test <span class="emphasis"><em>DiningEntry</em></span></h4></div></div></div><p>After the last step, you know there's something wrong with the
+        <span class="emphasis"><em>DiningEntryUI</em></span> application that is resulting in a
+        <span class="emphasis"><em>null</em></span> value being printed out where there should
+        be an indicator of a successfully rewarded dining transaction.</p><p>While it would be easy enough to begin browsing the
+        implementation source and trying to find and fix the problem, the best
+        thing to do is ensure that this problem never happens again with a
+        unit test.</p><p>You're in luck, because just such a unit test has already been
+        started for you. Your job in this step will be to finish it, and in
+        the process, fix the <span class="emphasis"><em>null</em></span> output above.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top">Throughout this course, unit tests will be used to drive the
+        process of completing labs. This promotes the best practice of unit
+        testing in general and is a great way to let you know that you've
+        successfully completed a given step. JUnit is the framework of choice,
+        as it has wide adoption and great tooling support.</td></tr></table></div><p>Take a moment now to locate
+        <span class="emphasis"><em>rewards.ui.DiningEntryTests</em></span> in the
+        <span class="emphasis"><em>src/test/java</em></span> source folder of the
+        <span class="emphasis"><em>ei-course-intro</em></span> project. Right click on that
+        class from the Package Explorer view and select <span class="emphasis"><em>Run
+        As-&gt;JUnit Test</em></span> (or use <span class="emphasis"><em>ALT-SHIFT-X +
+        T</em></span>).</p><p>Notice that the bar is green? This is because the tests are not
+        yet finished. Your first job is to complete the tests and make them
+        fail.</p><p>Take a look at the source for
+        <span class="emphasis"><em>DiningEntryTests</em></span>, and in particular take a moment
+        to review the <span class="emphasis"><em>testValidDiningEntry()</em></span> method. It
+        is heavily commented to aid your understanding.</p><p>The idea is to test what happens when a user enters perfectly
+        valid information about a dining transaction. That information should
+        be accepted by the program and turned into a
+        <span class="emphasis"><em>Dining</em></span> object. Then, that
+        <span class="emphasis"><em>Dining</em></span> object should be passed to the
+        <span class="emphasis"><em>RewardNetwork</em></span> service's
+        <span class="emphasis"><em>rewardAccountFor(Dining)</em></span> method to be
+        processed.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"> Understanding Mockito: As mentioned in the slide
+        presentation, Mockito will be used as a mocking framework throughout
+        this course. Mocking is a technique that greatly simplifies and speeds
+        the process of unit testing. </td></tr></table></div><p> </p><p> Notice how in
+        <span class="emphasis"><em>testValidDiningEntry()</em></span> a
+        <span class="emphasis"><em>RewardNetwork</em></span> mock is created and given
+        instructions about how to behave under current conditions. </p><p>
+        </p><p> A <span class="emphasis"><em>DiningEntry</em></span> object is created and
+        supplied with an <span class="emphasis"><em>InputStream</em></span> containing valid
+        dining transaction input. </p><p> Finally,
+        <span class="emphasis"><em>diningEntry.start()</em></span> is called in order to begin
+        processing the supplied user input. This 'turns on' the
+        <span class="emphasis"><em>DiningEntry</em></span> object for interactive use.</p><p>Complete the test by uncommenting the call to
+        <span class="emphasis"><em>Mockito.verify()</em></span> (<span class="emphasis"><em>TODO 02</em></span>)
+        </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>The "Tasks" view in the bottom half of the IDE shows all
+            TODOs for the current project when you're using the default
+            "Training" perspective. Just double-click on one of the TODOs to
+            jump directly to the corresponding line in the containing
+            file.</p></td></tr></table></div><p>Also uncomment the verifications and assertions at the bottom of
+        the
+        <span class="emphasis"><em>testInvalidDiningEntryFollowedByValidDiningEntry()</em></span>
+        test method. (<span class="emphasis"><em>TODO 03</em></span>).</p><p>Now, re-run the test by right clicking and selecting
+        <span class="emphasis"><em>Run As-&gt;JUnit Test</em></span>.</p><p>Notice that both tests fail this time! The error message for
+        <span class="emphasis"><em>testValidDiningEntry()</em></span> should read as
+        follows:</p><pre class="programlisting">
+org.mockito.exceptions.verification.WantedButNotInvoked: 
+Wanted but not invoked:
+
+rewardNetwork.rewardAccountFor(
+    Dining of $50.00 charged to '1234123412341234' by 
+                       '1234567890' on 4/24/09 12:00 AM
+);
+
+at rewards.ui.DiningEntryTests
+        .testValidDiningEntry(DiningEntryTests.java:96)
+...
+    </pre><p>This error message is Mockito's way of telling you that the
+        <span class="emphasis"><em>rewardNetwork</em></span> method never got called by
+        <span class="emphasis"><em>DiningEntry.start()</em></span>. The
+        <span class="emphasis"><em>DiningEntry</em></span> object starts up and accepts user
+        input correctly, but it never submits that user input to the
+        <span class="emphasis"><em>RewardNetwork</em></span> service.</p><p>In the next step you'll fix that problem.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e742"></a>1.3.2.5.&nbsp;Step 5: Finish implementing
+        <span class="emphasis"><em>DiningEntry</em></span></h4></div></div></div><p>Open <span class="emphasis"><em>DiningEntry</em></span> and find <span class="emphasis"><em>TODO
+        04</em></span>. Complete this task by passing the
+        <span class="emphasis"><em>dining</em></span> object as a parameter to
+        <span class="emphasis"><em>rewardNetwork.rewardAccountFor()</em></span>. Assign the
+        return value to the <span class="emphasis"><em>confirmation</em></span> variable that
+        has already been declared for you.</p><p>Run <span class="emphasis"><em>DiningEntryTests</em></span> once more. If
+        <span class="emphasis"><em>TODO 04</em></span> was completed correctly, you should see
+        the green bar. You've now tested that <span class="emphasis"><em>DiningEntry</em></span>
+        functions properly.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e775"></a>1.3.2.6.&nbsp;Step 6: Verify interactive dining entry works as
+        expected</h4></div></div></div><p>Now that the core <span class="emphasis"><em>DiningEntry</em></span>
+        implementation has been tested and we know it works, you should be
+        able to run the interactive <span class="emphasis"><em>DiningEntryUI</em></span>
+        application successfully.</p><p>Navigate to <span class="emphasis"><em>DiningEntryUI</em></span> and from the
+        context menu, select <span class="emphasis"><em>Run As-&gt;Java
+        Application</em></span>.</p><p>Repeat the data entry steps from above:</p><pre class="programlisting">
+Dining amount: 100
+Member credit card number: 1234123412341234
+Merchant number: 1234567890
+    </pre><p>This time, you should see the following result:</p><pre class="programlisting">
+Dining of $100.00 charged to '1234123412341234' by 
+                   '1234567890' on 4/10/09 12:00 AM
+
+Rewarding account for dining via RewardNetwork...
+Result: Result: Reward of $8.00 applied to account 
+                123456789. RewardConfirmation id is: 1
+    </pre><p>Finally, you'll be prompted to decide whether or not to enter
+        another dining event. You can supply '<span class="emphasis"><em>n</em></span>' to exit
+        the program:</p><pre class="programlisting">
+Would you like to enter another Dining event? [y/n]: n
+
+Thank you, goodbye.
+    </pre><p>Notice that the amount of the <span class="emphasis"><em>Reward</em></span> was
+        <span class="emphasis"><em>$8.00</em></span>. This <span class="emphasis"><em>Restaurant</em></span>
+        apparently has a generous 8% cash back policy. That money is now
+        available in the <span class="emphasis"><em>Beneficiary</em></span> savings accounts
+        associated with this Reward Network member
+        <span class="emphasis"><em>Account</em></span>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e826"></a>1.3.2.7.&nbsp;Monitor dining entry statistics via JMX</h4></div></div></div><p>Throughout this course, you will use JMX to manage and monitor
+        the systems being integrated. JMX provides a very convenient way of
+        visualizing and manipulating objects at runtime. As a refresher on JMX
+        and Spring's support for JMX, let's follow the two very simple steps
+        below to register the <span class="emphasis"><em>DiningEntry</em></span> bean as a JMX
+        MBean.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="applyJMXMetadata"></a>1.3.2.8.&nbsp;Step 7: Apply JMX metadata to
+        <span class="emphasis"><em>DiningEntry</em></span></h4></div></div></div><p>Open (<span class="emphasis"><em>CTRL-SHIFT-T</em></span>)
+        <span class="emphasis"><em>DiningEntry</em></span> once again. Complete <span class="emphasis"><em>TODO
+        05</em></span> by adding Spring's <span class="emphasis"><em>@ManagedResource</em></span>
+        annotation on the class.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">Remember to use <span class="emphasis"><em>Content Assist</em></span> in Eclipse
+        (<span class="emphasis"><em>CTRL-SPACE</em></span>) to aid you when applying the
+        <span class="emphasis"><em>@ManagedResource</em></span> annotation.</td></tr></table></div><p>Remaining within <span class="emphasis"><em>DiningEntry</em></span>, complete
+        <span class="emphasis"><em>TODO 06</em></span> and <span class="emphasis"><em>TODO 07</em></span> by
+        adding the <span class="emphasis"><em>@ManagedAttribute</em></span> annotation on the
+        <span class="emphasis"><em>getDiningEntryCount()</em></span> and
+        <span class="emphasis"><em>getDiningEntryErrorCount()</em></span> methods.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="enableJmxRegistration"></a>1.3.2.9.&nbsp;Step 8: Enable automatic registration of
+        <span class="emphasis"><em>DiningEntry</em></span> as a JMX MBean</h4></div></div></div><p>Open (<span class="emphasis"><em>CTRL-SHIFT-R</em></span>)
+        <span class="emphasis"><em>diningentry-config.xml</em></span>. You'll notice a TODO
+        which asks you to enable registration of JMX MBeans.</p><p>Now, complete <span class="emphasis"><em>TODO 08</em></span> by declaring the
+        correct element from the <span class="emphasis"><em>context:</em></span>
+        namespace.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">Remember that <span class="emphasis"><em>Content Assist</em></span> works from
+        within Spring XML files, as well. Type
+        <span class="emphasis"><em>&lt;context:</em></span> followed by
+        <span class="emphasis"><em>CTRL-SPACE</em></span> to see a list of elements available in
+        the <span class="emphasis"><em>context:</em></span> namespace. From the
+        <span class="emphasis"><em>Content Assist</em></span> menu, you'll notice that you can
+        read the XSD documentation about each element.</td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="verifyWithJMX"></a>1.3.2.10.&nbsp;Step 9: Launch <span class="emphasis"><em>DiningEntryUI</em></span> and
+      monitor its statistics via <span class="emphasis"><em>JConsole</em></span></h4></div></div></div><p>
+      For the final step of the lab, let's launch
+      <span class="emphasis"><em>DiningEntryUI</em></span> once again. This time, however, we'll
+      be able to monitor its statistics using JMX. </p><p> Right click
+      on <span class="emphasis"><em>rewards.ui.DiningEntryUI</em></span> and <span class="emphasis"><em>Run
+      As-&gt;Java Application</em></span>. The usual dining entry prompt should
+      appear. Just leave it as is. </p><p> Now, open a windows command
+      prompt (<span class="emphasis"><em>Start-&gt;Run-&gt;'cmd'</em></span>), and type </p><pre class="programlisting">
+C:\&gt; jconsole
+    </pre><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"> JConsole is the default JMX console that ships
+      with Java, versions 5.0 and greater. It's located in the
+      <span class="emphasis"><em>bin</em></span> directory of the JDK home: if that's not on
+      your path, then 'cd' into that directory first! </td></tr></table></div><p> When the
+      JConsole connection dialog appears, select the
+      <span class="emphasis"><em>rewards.ui.DiningEntryUI</em></span> process and click
+      'Connect'. After a few moments, you'll be presented with the following
+      screen. </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="80%"><tr><td><img src="images/jconsole-connect.png" width="100%"></td></tr></table></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"> If you cannot connect, you need to set the
+      <code class="code">-Dcom.sun.management.jmxremote</code> VM argument within the Run
+      Configurations... dialog for the DiningEntryUI Java Application. If you
+      are unfamiliar with how to do this, ask your instructor. </td></tr></table></div><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="80%"><tr><td><img src="images/jconsole-initialscreen.png" width="100%"></td></tr></table></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Connecting using JConsole"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Connecting using JConsole</th></tr><tr><td align="left" valign="top"><p>If you can not see the process you started in JConsole (in the
+          'Local Process' section) or the connect times out, it is possible
+          you do not have adequate security rights in your environment. In
+          this case, you will have to connect to the process via a socket
+          connection instead. In the VM arguments tab of your launch
+          configuration, add the following arguments:</p><pre class="programlisting">
+-Dcom.sun.management.jmxremote.port=8181
+-Dcom.sun.management.jmxremote.authenticate=false
+-Dcom.sun.management.jmxremote.ssl=false
+     </pre><p>Then restart the process, and connect via JConsole by using
+          the 'Remote Process' selection, specifying a host of
+          <span class="emphasis"><em>localhost</em></span> and port of
+          <span class="emphasis"><em>8181</em></span>.</p></td></tr></table></div><p> Click on <span class="emphasis"><em>MBeans</em></span> and navigate to the
+      <span class="emphasis"><em>rewards.ui-&gt;DiningEntry-&gt;rewards.ui.DiningEntry</em></span>
+      MBean. </p> Select 'Attributes' and notice that you're presented with
+      the following: <div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="80%"><tr><td><img src="images/jconsole-attributes.png" width="100%"></td></tr></table></div><p> Now, double click on each of the
+      <span class="emphasis"><em>0</em></span> values under the <span class="emphasis"><em>Value</em></span>
+      column. This expands the values out to graphs as below: </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="80%"><tr><td><img src="images/jconsole-graphs.png" width="100%"></td></tr></table></div><p> Return to the console in STS, and complete a
+      dining entry with valid values: </p><pre class="programlisting">
+Dining amount: 100
+Member credit card number: 1234123412341234
+Merchant number: 1234567890
+    </pre><p> Notice that the
+      <span class="emphasis"><em>DiningEntryCount</em></span> graph has changed? It should now
+      read '1'. </p><p> At the console, enter '<span class="emphasis"><em>y</em></span>'
+      to enter another dining record. This time, supply invalid values:
+      </p><pre class="programlisting">
+Dining amount: 100
+Member credit card number: 123
+Merchant number: 456
+    </pre><p> You'll notice an error in red in the STS console,
+      and back in JConsole, the <span class="emphasis"><em>DiningEntryErrorCount</em></span>
+      graph should now read '1' as well. </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1031"></a>1.3.2.11.&nbsp;Summary</h4></div></div></div><p>You've successfully completed this lab! At this point, you
+        should have an understanding of the following:</p><div class="itemizedlist"><ul type="disc"><li><p>The Spring Tool Suite and some of its features that
+            aid in developing Spring-based applications</p></li><li><p>The Reward Dining application domain and the core
+            <span class="emphasis"><em>RewardNetwork</em></span> API</p></li><li><p>How to register any Spring-managed bean as a JMX MBean for
+            easy monitoring and management</p></li></ul></div><p>In the labs to come, we'll dive deeper into all of these topics.
+        For now, you've got the basics and are ready to move on!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="reference-domain.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="tasks-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Reward Dining: The Course Reference Domain&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;2.&nbsp;tasks: Tasks and Scheduling</td></tr></table></div></body></html>

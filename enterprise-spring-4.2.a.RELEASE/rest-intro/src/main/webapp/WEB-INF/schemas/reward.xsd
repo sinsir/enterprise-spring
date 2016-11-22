@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.springsource.com/reward"
+	xmlns:reward="http://www.springsource.com/reward"
+	elementFormDefault="qualified">
+
+	<element name="reward">
+		<complexType>
+			<attribute name="confirmationNumber" type="string" />
+			<attribute name="transactionId" type="string" />
+			<attribute name="rewardAmount" type="decimal" />
+			<attribute name="rewardDate" type="date" />
+			<attribute name="accountNumber" type="string" />
+			<attribute name="diningAmount" type="decimal" />
+			<attribute name="merchantNumber" type="string" />
+			<attribute name="diningDate" type="date" />
+		</complexType>
+	</element>
+
+</schema>

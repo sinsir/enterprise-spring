@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://www.springsource.com/reward-network" xmlns:r="http://www.springsource.com/reward-network"
+	elementFormDefault="qualified">
+
+	<!-- TODO 03: Insert your generated definition of rewardAccountForDiningRequest here.
+	Examine the generated datatypes, do they appear to be correct?  Revise them if needed.  Save your work.
+	 -->
+
+	<!-- TODO 04: Run the create-classes.xml file (in project root) to generate domain object using JAXB.  
+	Refresh this project to see the generated classes. 
+	-->
+	
+	<xs:element name="rewardAccountForDiningResponse">
+		<xs:complexType>
+			<xs:attribute name="confirmationNumber" type="xs:string" />
+			<xs:attribute name="accountNumber" type="xs:string" />
+			<xs:attribute name="amount" type="xs:decimal" />
+		</xs:complexType>
+	</xs:element>
+ 
+</xs:schema>

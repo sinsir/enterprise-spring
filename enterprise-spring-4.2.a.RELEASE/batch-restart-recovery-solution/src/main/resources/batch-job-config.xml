@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<import resource="classpath:app-config.xml"/>
+
+	<batch:job id="diningRequestsJob">
+		<batch:step id="diningRequestsStep">
+			<batch:tasklet start-limit="3">
+				<batch:chunk reader="diningRequestsReader"
+							 writer="reportWriter"
+							 commit-interval="10">
+					<batch:processor adapter-method="rewardAccountFor">
+						<ref bean="rewardNetwork"/>
+					</batch:processor>
+				</batch:chunk>
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<batch:job id="skippingDiningRequestsJob">
+		<batch:step id="skippingDiningRequestsStep">
+			<batch:tasklet start-limit="3">
+				<batch:chunk reader="diningRequestsReader"
+							 writer="reportWriter"
+							 commit-interval="10"
+							 skip-limit="1">
+					<batch:processor adapter-method="rewardAccountFor">
+						<ref bean="rewardNetwork"/>
+					</batch:processor>
+					<batch:skippable-exception-classes>
+						<!-- 
+						 skip invalid lines in input CSV file: note that we cannot use
+						 org.springframework.batch.item.file.transform.IncorrectTokenCountException,
+						 as that exception is wrapped in a FlatFileParseException before 
+						 skippability is determined 
+						--> 
+						<batch:include class="org.springframework.batch.item.file.FlatFileParseException"/>
+					</batch:skippable-exception-classes>
+				</batch:chunk>
+				<batch:listeners>
+					<batch:listener>
+						<bean class="rewards.batch.DiningSkipListener"/>
+					</batch:listener>
+				</batch:listeners>
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<bean id="diningRequestsReader" class="org.springframework.batch.item.file.FlatFileItemReader" scope="step">
+		<property name="resource" value="#{jobParameters['input.resource.path']}"/>
+		<property name="strict" value="true"/>
+		<property name="lineMapper">
+			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+				<property name="lineTokenizer">
+					<bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+						<property name="names">
+							<list>
+								<value>creditCardNumber</value>
+								<value>merchantNumber</value>
+								<value>amount</value>
+								<value>date</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+				<property name="fieldSetMapper">
+					<bean class="rewards.batch.DiningFieldSetMapper"/>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="reportWriter" class="rewards.batch.ReportWriter"/>
+
+</beans>

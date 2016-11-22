@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.springsource.training.eiws</groupId>
+	<artifactId>batch-admin</artifactId>
+	<packaging>war</packaging>
+
+	<parent>
+		<groupId>com.springsource.training.eiws</groupId>
+		<artifactId>parentEiwsProject</artifactId>
+		<version>4.2.a.RELEASE</version>
+	</parent>
+	
+	<properties>
+		<!-- downgrading to Spring 4.1 because of https://jira.spring.io/browse/BATCH-2369 -->
+		<spring.version>4.1.8.RELEASE</spring.version>
+	</properties>
+	
+	<dependencies>
+		<!-- Common classes: Percentage, MonetaryAmount -->
+		<dependency>
+			<groupId>com.springsource.training.eiws</groupId>
+			<artifactId>rewards-common</artifactId>
+  		</dependency>
+
+		<!-- Reference Application -->
+		<dependency>
+			<groupId>com.springsource.training.eiws</groupId>
+			<artifactId>rewards</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-batch</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-integration</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-jmx</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-jms</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-broker</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-client</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>xom</groupId>
+			<artifactId>xom</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.batch</groupId>
+			<artifactId>spring-batch-admin-manager</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		
+	</dependencies>
+
+</project>

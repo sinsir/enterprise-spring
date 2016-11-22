@@ -1,0 +1,144 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;8.&nbsp;si-configuration: Using an Idempotent Receiver and Filter invalid Dinings</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="si-intro-lab.html" title="Chapter&nbsp;7.&nbsp;si-intro: Refactoring from JMS to Spring Integration"><link rel="next" href="si-advanced-lab.html" title="Chapter&nbsp;9.&nbsp;si-advanced: Splitter and File System Integration"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="si-configuration-lab"></a>Chapter&nbsp;8.&nbsp;si-configuration: Using an Idempotent Receiver and Filter invalid Dinings</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="si-configuration-lab-introduction"></a>8.1.&nbsp;Introduction</h2></div></div></div><div class="orderedlist"><p class="title"><b>This lab involves the following use cases:</b></p><ol type="1"><li><p>Refactor the messaging configuration to ensure idempotency</p><div class="orderedlist"><ol type="a"><li><p>Prevent duplicate messages from reaching the Reward Network</p></li><li><p>Send confirmations no matter what</p></li></ol></div></li><li><p>Filter out invalid Dinings</p></li></ol></div><div class="orderedlist"><p class="title"><b>Topics covered</b></p><ol type="1"><li><p>Idempotent Receiver pattern</p></li><li><p>Filtering Messages</p></li><li><p>Working with the global errorChannel for polling receivers</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you'll gain experience with</b></p><ol type="1"><li><p>The <span class="emphasis"><em>chain</em></span> element</p></li><li><p>Implementing a custom handler</p></li><li><p>Defining a filter using SpEL</p></li><li><p>Bridging a channel for testing purposes</p></li></ol></div><p>
+Estimated completion time: 40 minutes
+  </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="si-configuration-lab-instructions"></a>8.2.&nbsp;Instructions</h2></div></div></div><p>
+In this lab you will improve the Reward Network application to allow the Credit Card Processors to hand off their Dinings faster.  
+</p><p>
+An Idempotent Receiver is a component that ensures that it will be in the same state after each reception of a certain message. So no matter how many times you receive a certain Dining, after processing there should be exactly one Reward for it. This is something we can guarantee even without using distributed transactions. The only thing you need to do to guarantee this is to check if you have already processed the Dining and only process it if you haven't. After ensuring that the Dining was processed you will send a confirmation no matter what.
+ </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e4017"></a>8.2.1.&nbsp;Part 1. Make the RewardNetwork Idempotent</h3></div></div></div><p>
+The Credit Card Processor will send a Dining. What does this dining represent?
+  </p><p>
+A Dining describes a real life event: someone has paid for a dinner with his creditcard. It tells you at what time this event happened (timestamp), where it happened (merchant number) and finally who did the dining (creditcard number). These three bits of information are <span class="emphasis"><em>universally unique</em></span>. For your convenience this has been captured in the Dining transactionId by the Credit Card Processor. 
+  </p><p>
+This allows you to check if you have already processed this Dining and act accordingly. The Credit Card Processor can send the Dining as many times as it likes and the RewardNetwork can confirm the reward for it as many times as requested, as long as we ensure the reward isn't duplicated.
+  </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4029"></a>8.2.1.1.&nbsp;Set up the messaging system</h4></div></div></div><p>
+We're going to work with a simplified setup that doesn't involve JMS or email, since it's not needed for this lab. The context has been split up in three parts. You will be working on <span class="emphasis"><em>spring-integration-idempotent-receiver-config.xml</em></span> first. Open the file and examine its contents: we're using a <span class="emphasis"><em>dinings</em></span> and <span class="emphasis"><em>confirmations</em></span> channel with a <span class="emphasis"><em>service-activator</em></span> that ties them together by calling the <span class="emphasis"><em>rewardNetwork</em></span> again. However, there's no inbound gateway that enters <span class="emphasis"><em>Dining</em></span> messages into the system, the testing code will do that directly instead.
+    </p><p>
+Open up <span class="emphasis"><em>IdempotentRewardNetworkIntegrationTests</em></span> and complete <span class="emphasis"><em>TODO 1</em></span> within the <span class="emphasis"><em>idempotence</em></span> test method. Run the test case.
+   </p><p>
+The second assertion should fail. This indicates that the <span class="emphasis"><em>RewardNetwork</em></span> is being invoked multiple times for the same dining event. In other words, our reward processing is <span class="emphasis"><em>not</em></span> idempotent.
+     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+        Note that this test doesn't use the real <span class="emphasis"><em>rewardNetwork</em></span> and <span class="emphasis"><em>rewardRepository</em></span>, but mocks. Check the <span class="emphasis"><em>test-context.xml</em></span> file to see how the mocks are set up.
+      </p></td></tr></table></div><p>
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4084"></a>8.2.1.2.&nbsp;Prevent duplicate dining submissions</h4></div></div></div><p>
+Open up <span class="emphasis"><em>spring-integration-idempotent-receiver-config.xml</em></span> if you haven't already.
+   </p><p>
+The check if a Dining for the transactionId at hand has already been processed needs to happen before calling the <span class="emphasis"><em>rewardAccountFor(Dining)</em></span> method. To accomplish this you're going to wrap the relevant part of the message flow in a <span class="emphasis"><em>&lt;chain/&gt;</em></span> with some extra endpoints. A chain will automatically wire all its children together linearly using direct channels. Wrap a chain around the rewardNetwork service activator (<span class="emphasis"><em>TODO 02</em></span>).
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">
+The chain should have input and output channels, but the service-activator will no longer need any explicit channel configuration.
+   </td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4105"></a>8.2.1.3.&nbsp;Send the confirmation</h4></div></div></div><p>
+Whenever a message is received a confirmation needs to be sent, even if nothing has happened. Otherwise our service wouldn't be idempotent. More importantly, how else would the Credit Card Processor know that they don't have to retry?
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+It is possible that the Credit Card Processor already has decided to retry a Dining when you are processing it but before you've sent a RewardConfirmation. This shouldn't be a problem, but you should be aware of this when you're correlating messages in the Credit Card Processors log files, otherwise you might think there is a bug. Just remember what is unique: an actual dining transaction - all communication about it could be duplicated.
+   </p></td></tr></table></div><p>
+Now add another service-activator to the chain <span class="emphasis"><em>before</em></span> the rewardNetwork. For your convenience an AlreadyRewardedConfirmer has been implemented that will side track the message out of the chain in case it was already processed. The only thing you need to do is point the service activator to the <span class="emphasis"><em>alreadyRewardedConfirmer</em></span> bean (<span class="emphasis"><em>TODO 03</em></span>).
+   </p><p>
+Look at the code and configuration for the <span class="emphasis"><em>alreadyRewardedConfirmer</em></span> to see how it works: it returns the received <span class="emphasis"><em>Dining</em></span> when no confirmation was found so that the chain passes that to the <span class="emphasis"><em>rewardNetwork</em></span>, but short-circuits the chain by returning <span class="emphasis"><em>null</em></span> when a confirmation was found. To ensure that this confirmation is still sent to the <span class="emphasis"><em>confirmations</em></span> channel it uses a simple gateway. 
+   </p><p>
+Run the <span class="emphasis"><em>IdempotentRewardNetworkIntegrationTests</em></span> again. It should now pass. Once it does, open the <span class="emphasis"><em>RewardMessagingIntegrationTests</em></span>, remove the <span class="emphasis"><em>@Ignore</em></span> on the <span class="emphasis"><em>sendDiningTwice</em></span> method (<span class="emphasis"><em>TODO 04</em></span>) and run the test. Make sure that it passes before you start with the next part of the lab.
+   </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e4158"></a>8.2.2.&nbsp;Part 2. Filtering broken messages</h3></div></div></div><p>
+So far we've worked with valid input for the <span class="emphasis"><em>rewardNetwork</em></span> (and the newly added <span class="emphasis"><em>alreadyRewardedConfirmer</em></span>). But what happens when the input is broken? If handling the Dining happens in the same thread, the caller simply receives the exception that's thrown as a result of the invalid data. To test this, open <span class="emphasis"><em>InvalidDiningsIntegrationTests</em></span> and complete <span class="emphasis"><em>TODO 05</em></span> by sending the <span class="emphasis"><em>invalidDining</em></span> to the "dinings" channel using the provided template. Run the test and check the exception that's thrown. 
+  </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4178"></a>8.2.2.1.&nbsp;Filter out invalid messages</h4></div></div></div><p>
+Instead of allowing invalid Dinings to reach the <span class="emphasis"><em>rewardNetwork</em></span>, we want to filter them out before they reach the service activator. Since you have a chain in place already, that only requires an additional filter as the first endpoint in the chain. Add a filter to the chain that filters out Dinings that have one of their properties set to <span class="emphasis"><em>null</em></span> (<span class="emphasis"><em>TODO 06</em></span>).
+      </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+This is a good candidate for using an expression instead of a Java implementation: something in the form of <span class="emphasis"><em>payload.firstProperty != null and payload.secondProperty != null ...</em></span> will do the trick. 
+        </p></td></tr></table></div><p>
+      </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+If you see an error on the service-activator after adding the filter that says it must be followed by attribute specifications, "&gt;" or "/&gt;" then please ignore it: that's a bug in the tooling.
+        </p></td></tr></table></div><p>
+Run the test again and make sure there's no exception this time.  
+    </p><p>
+In some scenarios silently dropping invalid messages is a fine solution. In other cases you might want to forward the message to some discard channel or 
+throw an exception instead: enable the latter by setting the <span class="emphasis"><em>throw-exception-on-rejection</em></span> attibute of the 
+filter to <span class="emphasis"><em>true</em></span> (<span class="emphasis"><em>TODO 07</em></span>). Run the test again to see the difference (it should fail.)
+    </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4214"></a>8.2.2.2.&nbsp;Test error handling for asynchronous message handling</h4></div></div></div><p>
+With synchronous endpoints, it's easy to tell the difference between successful processing or an exception as you just saw. The situation is very different when the invalid Dining is processed asynchronously on a different thread, however. To see this, open <span class="emphasis"><em>spring-integration-idempotent-receiver-config.xml</em></span> and change the "dinings" channel to a QueueChannel by adding a <code class="literal">&lt;queue&gt;</code> subelement to it (<span class="emphasis"><em>TODO 08</em></span>). Note that a default poller is already configured in <span class="emphasis"><em>spring-integration-infrastructure-config.xml</em></span>, so no additional configuration is needed.
+   </p><p>
+Run the <span class="emphasis"><em>InvalidDiningsIntegrationTests</em></span> again. Notice that there's no exception this time, even though the filter throws one. That's because the exception was thrown from a different thread, so Spring Integration has wrapped it and sent it to the "errorChannel" channel. A logging channel adapter that logs the exception message is already set up, so the Console view should show the exception. What we want is a good way to test for the exception message to arrive on the <span class="emphasis"><em>errorChannel</em></span>: just looking at the Console is no good for an automated test of course. 
+   </p><p>
+A common technique for checking for expected messages in a test is to <span class="emphasis"><em>bridge</em></span> the channel that will contain the expected message to a dedicated test queue channel. You can then receive from that test channel in your test and check the message. 
+   </p><p>
+Open <span class="emphasis"><em>test-context.xml</em></span> and complete <span class="emphasis"><em>TODO 09</em></span> by creating a new QueueChannel called "errorTestChannel" and define a bridge that forwards messages from the default "errorChannel" to this "errorTestChannel". 
+     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+Note that bridging or subscribing to a point-to-point instead of a publish-subscribe channel with an existing receiver in the test context would not be a good idea, as it interferes with the intended receiver. You could use a global wire tap element then instead of a bridge:
+        </p><pre class="programlisting">&lt;int:wire-tap channel="errorTestChannel" pattern="errorChannel" /&gt;</pre><p>
+      </p></td></tr></table></div><p>
+   </p><p>
+Then switch to the <span class="emphasis"><em>InvalidDiningsIntegrationTests</em></span> and complete <span class="emphasis"><em>TODO 10</em></span> by using the provided MessagingTemplate to check that there's a message on the "errorTestChannel" with a payload of type <span class="emphasis"><em>MessageRejectedException</em></span>; this is the exception thrown by the filter when it rejects the message with the invalid Dining. 
+    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p> 
+The template is configured with a receive timeout already, so it will simply return <span class="emphasis"><em>null</em></span> when there's no message on a channel that you try to receive from.
+     </p></td></tr></table></div><p>
+   </p><p>When the test passes, switch to the <span class="emphasis"><em>RewardMessagingIntegrationTests</em></span> and remove the <span class="emphasis"><em>@Ignore</em></span> on the <span class="emphasis"><em>sendInvalidDining</em></span> method (<span class="emphasis"><em>TODO 11</em></span>). Make sure the test passes now. 
+    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+Note that this test uses a diffent approach to check for the expected message: it subscribes a handler to the "errorChannel" and waits to give the system time to process the message before checking the result (after all, it's asynchronous). In general the bridging approach is preferable, as it relies on the receive call to wait for you, whereas this approach requires manual waits. The approach in this test does not require a dedicated test configuration file with the QueueChannel and bridge, though.
+      </p></td></tr></table></div><p>
+    When the test passes, you've successfully completed the lab.   You might like to tidy
+    the output by suppressing the stack-traces from the exceptions that we are expecting
+    as part of the tests.  We don't care about them and they make the tests look like
+    they are failing. (TODO 12).
+   </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="si-configuration-bonus"></a>8.2.3.&nbsp;BONUS: Java configuration refactoring</h3></div></div></div><p>
+            If you have some time left, you can work on refactoring the XML configuration files to
+            Java configuration. For this purpose a new dependency <code class="code">spring-integration-java-dsl</code> has been added to your project.
+            See the project <a href="https://github.com/spring-projects/spring-integration-java-dsl/wiki/Spring-Integration-Java-DSL-Reference" target="_top">https://github.com/spring-projects/spring-integration-java-dsl/wiki/Spring-Integration-Java-DSL-Reference</a> for more informations.
+            We'll use the same tests, without any modification in the test logic,
+            to validate the configuration refactoring works. <span class="emphasis"><em>Before</em></span> moving on to the refactoring,
+            ensure the <code class="classname">InvalidDiningsIntegrationTests</code> and
+            <code class="classname">RewardMessagingIntegrationTests</code> pass.
+        </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4315"></a>8.2.3.1.&nbsp;Refactor the jobs configurations to Java</h4></div></div></div><p>
+                <code class="literal">TODO 13</code>: Change the <code class="interfacename">@SpringApplicationConfiguration</code> annotation
+                in the <code class="classname">RewardMessagingIntegrationTests</code> class to use the <code class="classname">SpringIntegrationIdempotentReceiverConfig</code>,
+                <code class="classname">SpringIntegrationInfraConfig</code> and <code class="classname">SystemTestConfig</code> configuration classes.
+                The <code class="interfacename">@SpringApplicationConfiguration</code> has a <code class="code">classes</code> attribute to specify this.
+            </p><p>
+                <code class="literal">TODO 14</code>: Take a look at the configuration classes.
+                <code class="classname">SpringIntegrationIdempotentReceiverConfig</code> is the configuration entry point for the spring integration workflow configuration.
+                <code class="classname">SystemTestConfig</code> imports the infrastructure configuration like the datasource and business beans.
+                And <code class="classname">SpringIntegrationInfraConfig</code> contains Spring Integration infrastucture.
+                </p><p>
+                <code class="literal">TODO 15</code>: The point here is to enable the Spring Integration Java configuration support.
+                To do that, add the <code class="interfacename">@EnableIntegration</code> and <code class="interfacename">@IntegrationComponentScan</code> annotations
+                into <code class="classname">SpringIntegrationIdempotentReceiverConfig</code>.
+                This annotations declare the Spring Integration infrastructure and enable component scanning for Spring Integration components.
+                For more informations, see documentation <a href="http://docs.spring.io/spring-integration/docs/latest-ga/reference/html/history.html#4.0-enable-configuration" target="_top">http://docs.spring.io/spring-integration/docs/latest-ga/reference/html/history.html#4.0-enable-configuration</a>.
+            </p><p>
+                <code class="literal">TODO 16</code>: It's time now to configure the <code class="code">gateway</code> the Java way.
+                Here, step in <code class="classname">ConfirmationProcessor</code> and use the 
+                <code class="interfacename">@MessagingGateway</code> and <code class="interfacename">@Gateway</code> annotations to replace the XML
+                configuration (<code class="code">&lt;int:gateway ...</code>).
+            </p><p>
+                 <code class="literal">TODO 17</code>: Now you're going to create your first channel.
+                 Let's go in <code class="classname">SpringIntegrationIdempotentReceiverConfig</code> and create a method named <span class="emphasis"><em>'dinings'</em></span>.
+                 Use for this the factory builder <code class="classname">MessageChannels</code>.
+                 Be careful, the method name will be used to reference the channel elsewhere.
+            </p><p>
+                 <code class="literal">TODO 18</code>: move on few lines above in method <code class="code">diningsFlow</code> and add this channel as the input channel to the dinings integration flow.
+                 As it's the first time we manipulate this flow, use the factory builder <code class="classname">IntegrationFlows</code> to declare it.
+                 Don't hesitate to go back to the slides if you don't remember the exact syntax.
+            </p><p>
+                 <code class="literal">TODO 19</code>: Now create the output channel.
+                 In <code class="classname">SpringIntegrationIdempotentReceiverConfig</code>, create a method named <span class="emphasis"><em>'confirmations'</em></span>.
+                 Be careful, the method name will be used to reference the channel later.
+            </p><p>
+                 <code class="literal">TODO 20</code>: move on few lines above in method <code class="code">diningsFlow</code> and add this channel as the output of the dinings integration flow.
+            </p><p>
+                <code class="literal">TODO 21</code>: Now, let's configure the filter. 
+                Define the filter with the appropriate method and the same filter logic as in <code class="code">spring-integration-idempotent-receiver-config.xml</code>
+                (to filter empty dinings). 
+                Don't forget to set the <span class="emphasis"><em>throwExceptionOnRejection</em></span> property to <span class="emphasis"><em>true</em></span>
+                (with a Java 8 lambda.)
+                Don't hesitate to go back to the slides if you don't remember the exact syntax.
+            </p><p>
+                <code class="literal">TODO 22</code>: We're getting close to the end of the refactoring. We have to define the service activators. 
+                Add these 2 service activators. The first one uses the <code class="code">alreadyRewardedConfirmer</code> bean and
+                its <code class="code">sendConfirmationForExistingDining</code> method.
+                The second one uses the <code class="code">rewardNetwork</code> bean and
+                its <code class="code">rewardAccountFor</code> method.
+            </p><p>
+                <code class="literal">TODO 23</code>: Configure a poller.
+                Step in java config class <code class="classname">SpringIntegrationInfraConfig</code>.
+                Just like in the XML configuration file 'spring-integration-infrastructure-config.xml' we need to configure a default poller with a fixed delay of 250 ms.
+            </p><p>
+                <code class="literal">TODO 24</code>: Run the <code class="classname">RewardMessagingIntegrationTests</code>, it should pass if the Java configuration
+                is correct.
+            </p><p>Congratulations, you refactored the jobs configurations to Java DSL!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="si-intro-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="si-advanced-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;7.&nbsp;si-intro: Refactoring from JMS to Spring Integration&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;9.&nbsp;si-advanced: Splitter and File System Integration</td></tr></table></div></body></html>

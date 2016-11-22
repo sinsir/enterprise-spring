@@ -1,0 +1,160 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;4.&nbsp;jms: Simplifying Messaging with Spring's JMS Support</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="rest-intro-lab.html" title="Chapter&nbsp;3.&nbsp;rest-intro: Introduction to RESTful Applications with Spring"><link rel="next" href="jms-tx-lab.html" title="Chapter&nbsp;5.&nbsp;jms-tx: Add Transactional Capabilities to the JMS Interaction"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="jms-lab"></a>Chapter&nbsp;4.&nbsp;jms: Simplifying Messaging with Spring's JMS Support</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="jms-lab-introduction"></a>4.1.&nbsp;Introduction</h2></div></div></div><p>In an effort to improve the performance and robustness of the
+    application, the reward network team wishes to process incoming customer
+    dining events in an asynchronous fashion. Remember that the fundamental
+    use case of the reward network application is <span class="emphasis"><em>rewarding an
+    account for dining</em></span> - that won't change. The goal of this lab is
+    to decouple the process of rewarding an account from the process of
+    receiving a new dining event.</p><p>JMS is a good fit for achieving this goal. As
+    <span class="emphasis"><em>Dining</em></span> objects arrive in the system, they will be
+    sent to a JMS <span class="emphasis"><em>Destination</em></span> where they will wait to be
+    consumed and routed through the existing
+    <span class="emphasis"><em>RewardNetwork.rewardAccountFor(Dining)</em></span> method. Recall
+    that <span class="emphasis"><em>rewardAccountFor(Dining)</em></span> returns a
+    <span class="emphasis"><em>RewardConfirmation</em></span> - this object will need to be
+    placed on its own JMS <span class="emphasis"><em>Destination</em></span> as well, so that it
+    can be consumed by a <span class="emphasis"><em>RewardConfirmationLogger</em></span> (more
+    on this object later).</p><p>When finished, the benefit will be that any number of
+    <span class="emphasis"><em>Dining</em></span> events can arrive in the system, regardless of
+    whether the <span class="emphasis"><em>RewardNetwork</em></span> endpoint is available. When
+    the <span class="emphasis"><em>RewardNetwork</em></span> does come online, it will consume
+    however many <span class="emphasis"><em>Dining</em></span> events have queued up. This is
+    <span class="emphasis"><em>asynchronous processing</em></span>.</p><p>This lab is broken into two sections. In the first section you will
+    complete the steps necessary to send incoming <span class="emphasis"><em>Dining</em></span>
+    objects as messages to a JMS Queue. In the second section you will consume
+    those messages and process them with the
+    <span class="emphasis"><em>DiningProcessor</em></span> object.</p><div class="orderedlist"><p class="title"><b>What you will learn</b></p><ol type="1"><li><p>How to configure and use Spring's
+        <span class="emphasis"><em>JmsTemplate</em></span></p></li><li><p>How to configure and use Spring's
+        <span class="emphasis"><em>MessageListenerContainer</em></span> support, via the
+        <span class="emphasis"><em>@JmsListener</em></span> annotation.</p></li></ol></div><p>Estimated time to complete: 30 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="jms-lab-quick-instructions"></a>4.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions</p><div class="orderedlist"><ol type="1"><li><p><span class="bold"><strong>Process five <code class="literal">Dining</code> objects through the
+        diningProcessor (TODO 01)</strong></span></p><p>Open <code class="literal">DiningProcessorTests</code> and process five Dining objects
+        through the <code class="literal">diningProcessor</code>. Now run the test. You will see an
+        <code class="literal">UnsupportedOperationException</code>. </p></li><li><p><span class="bold"><strong>Convert the <code class="literal">dining</code> to a message and send
+        it to its destination (TODO 02)</strong></span> </p><p>Click on the exception from the stack trace and implement the
+        <code class="literal">process(Dining)</code> method on <code class="literal">JmsDiningProcessor</code>. Run the test again to
+        see the effect. The test will still fail. You should see a
+        <code class="literal">NullPointerException</code>.</p></li><li><p><span class="bold"><strong>Create a <code class="literal">JmsTemplate</code> and inject the
+        <code class="literal">cachedConnectionFactory</code> as well as the defaultDestination
+        (diningQueue) (TODO 03)</strong></span> </p><p>Define a <code class="literal">JmsTemplate</code> bean and inject it into the <code class="literal">diningProcessor</code>
+        bean. Now run <code class="literal">DiningProcessorTests</code> once again. The Test should
+        pass.</p></li><li><p><span class="bold"><strong>Wait for the batch and assert it's size is
+        5 (modify the assertion) (TODO 04)</strong></span> </p><p>Use the <code class="literal">waitForBatch()</code> to wait 10 seconds for the 5 dinings to
+        get sent, consumed and routed through the <code class="literal">RewardNetwork</code>. Run
+        <code class="literal">DiningProcessorTests</code> again. It should fail.</p></li><li><p><span class="bold"><strong>Activate the detection of JMS annotations
+        and declare a <code class="literal">JmsListenerContainerFactory</code> (TODO 05)</strong></span> </p><p>Open the <code class="literal">JmsInfrastructureConfig</code> configuration class. Add the
+		<code class="literal">@EnableJms</code> annotation on top of it and declare a <code class="literal">jmsListenerContainerFactory</code>
+		bean of type <code class="literal">DefaultJmsListenerContainerFactory</code>. Don't forget to
+		inject the <code class="literal">cachingConnectionFactory</code> bean into it.		
+		</p></li><li><p><span class="bold"><strong>Wire the <code class="literal">rewardNetwork</code> with
+        the <code class="literal">@JmsListener</code> annotation (TODO 06)</strong></span> </p><p>Open up the <code class="literal">RewardNetworkImpl</code> class at the 
+        <code class="literal">rewardAccountFor</code> method level.
+        Use the <code class="literal">@JmsListener</code> annotation to listen on the
+        <code class="literal">rewards.queue.dining</code> queue. Use also the <code class="literal">@SendTo</code>
+        annotation to send the method output to the <code class="literal">rewards.queue.confirmation</code>
+        queue.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="jms-lab-instructions"></a>4.3.&nbsp;Instructions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e2342"></a>4.3.1.&nbsp;Sending Dining Messages to a Destination</h3></div></div></div><p>In this section you will see how to convert a
+      <span class="emphasis"><em>Dining</em></span> instance into a JMS
+      <span class="emphasis"><em>Message</em></span> and send it to a
+      <span class="emphasis"><em>Destination</em></span>.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2356"></a>4.3.1.1.&nbsp;Step 1. Modify the test</h4></div></div></div><p>Open <span class="emphasis"><em>DiningProcessorTests</em></span> and complete
+        <span class="emphasis"><em>TODO 01</em></span>. Now run the test. You will see an
+        <span class="emphasis"><em>UnsupportedOperationException</em></span>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2370"></a>4.3.1.2.&nbsp;Step 2. Resolve the error</h4></div></div></div><p>Click on the exception from the stack trace and implement the
+        <span class="emphasis"><em>process(Dining)</em></span> method on
+        <span class="emphasis"><em>JmsDiningProcessor</em></span> (<span class="emphasis"><em>TODO
+        02</em></span>).</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>When converting and sending the <span class="emphasis"><em>Dining</em></span>
+          object as a <span class="emphasis"><em>Message</em></span>, you will not need to
+          specify a <span class="emphasis"><em>Destination</em></span> explicitly. A
+          <span class="emphasis"><em>default destination</em></span> will be set up later in the
+          configuration for <span class="emphasis"><em>JmsTemplate</em></span>.</p></td></tr></table></div><p>When you're finished making the change, run the test again to
+        see the effect. The test will still fail, but you should see a
+        <span class="emphasis"><em>NullPointerException</em></span> this time.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2407"></a>4.3.1.3.&nbsp;Step 3. Set up the <span class="emphasis"><em>JmsTemplate</em></span></h4></div></div></div><p>The root cause of the <span class="emphasis"><em>NullPointerException</em></span>
+        above is that the <span class="emphasis"><em>JmsTemplate</em></span> was not injected
+        into our <span class="emphasis"><em>DiningProcessor</em></span> object.</p><p>To fix this problem, open <span class="emphasis"><em>client-config.xml</em></span>
+        and look at the <span class="emphasis"><em>diningProcessor</em></span> bean definition.
+        Notice that it is indeed missing its <span class="emphasis"><em>jmsTemplate</em></span>
+        property. Complete <span class="emphasis"><em>TODO 03</em></span> by defining a
+        <span class="emphasis"><em>JmsTemplate</em></span> bean and injecting it into the
+        <span class="emphasis"><em>diningProcessor</em></span> appropriately.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Be sure to configure the
+          <span class="emphasis"><em>connectionFactory</em></span> and
+          <span class="emphasis"><em>defaultDestination</em></span> properties on your
+          <span class="emphasis"><em>JmsTemplate</em></span> bean definition. Beans named
+          <span class="emphasis"><em>cachingConnectionFactory</em></span> and
+          <span class="emphasis"><em>diningQueue</em></span> have already been defined for this
+          purpose. See <span class="emphasis"><em>jms-infrastructure-config.xml</em></span> to
+          understand how these beans are created. Notice that the
+          <span class="emphasis"><em>diningQueue</em></span> bean is created with a
+          <span class="emphasis"><em>constructor-arg</em></span> indicating that the name of
+          this queue in the JMS broker is
+          <span class="emphasis"><em>rewards.queue.dining</em></span>.</p></td></tr></table></div><p>Now run <span class="emphasis"><em>DiningProcessorTests</em></span> once again.
+        You should have a green bar, meaning that you've successfully
+        processed the five <span class="emphasis"><em>Dining</em></span> objects and sent them
+        to the <span class="emphasis"><em>rewards.queue.dining</em></span> destination.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2484"></a>4.3.1.4.&nbsp;Receiving dining messages from a destination using JMS
+        listener</h4></div></div></div><p>In this section you will implement the receiving end of the
+        application. The goal is to watch the
+        <span class="emphasis"><em>rewards.queue.dining</em></span> destination and route
+        <span class="emphasis"><em>Dining</em></span> objects through our existing
+        <span class="emphasis"><em>RewardNetwork</em></span> implementation as they arrive. In
+        this way, the <span class="emphasis"><em>RewardNetwork</em></span> object will become a
+        participant in an <span class="emphasis"><em>event-driven application</em></span>
+        without requiring you to write any extra code.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: A note about&#xA;          RewardConfirmationLogger"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">A note about
+          <span class="emphasis"><em>RewardConfirmationLogger</em></span></th></tr><tr><td align="left" valign="top"><p>Notice in <span class="emphasis"><em>DiningProcessorTests</em></span> that an
+          object of type <span class="emphasis"><em>RewardConfirmationLogger</em></span> is
+          injected using <span class="emphasis"><em>@Autowired</em></span>. This object is
+          configured to listen on a second JMS destination named
+          <span class="emphasis"><em>rewards.queue.confirmation</em></span>, which has already
+          been set up for you. Every time a
+          <span class="emphasis"><em>RewardConfirmation</em></span> gets placed on that queue,
+          the <span class="emphasis"><em>RewardConfirmationLogger</em></span> consumes it and
+          adds it to its <span class="emphasis"><em>confirmations</em></span> collection.</p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2532"></a>4.3.1.5.&nbsp;Step 4. Modify the test</h4></div></div></div><p>Go back to <span class="emphasis"><em>DiningProcessorTests</em></span> and
+        complete <span class="emphasis"><em>TODO 04</em></span>. Use the
+        <span class="emphasis"><em>waitForBatch()</em></span> to wait 10 seconds for our 5
+        dinings to get sent, consumed and routed through the
+        <span class="emphasis"><em>RewardNetwork</em></span>.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Look at the implementation of
+          <span class="emphasis"><em>waitForBatch()</em></span>. Notice that it polls the size
+          of the <span class="emphasis"><em>RewardConfirmationLogger</em></span>'s
+          <span class="emphasis"><em>confirmations</em></span> collection for the specified
+          number of seconds. The method returns as soon as the desired number
+          of <span class="emphasis"><em>RewardConfirmations</em></span> have been processed or
+          the specified number of seconds to wait runs out, whichever comes
+          first.</p></td></tr></table></div><p>Run <span class="emphasis"><em>DiningProcessorTests</em></span> again. It should
+        fail, which makes sense because we haven't yet wired up the
+        <span class="emphasis"><em>RewardNetwork</em></span> as a listener on the
+        <span class="emphasis"><em>rewards.queue.dining</em></span> destination.
+        <span class="emphasis"><em>waitForBatch()</em></span> just times out after 10 seconds -
+        no <span class="emphasis"><em>Dining</em></span> objects have been passed through
+        <span class="emphasis"><em>RewardNetwork</em></span>, thus no confirmation messages have
+        shown up for the logger to record.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2584"></a>4.3.1.6.&nbsp;Step 5. Activate the detection of JMS annotations
+        and declare a <span class="emphasis"><em>JmsListenerContainerFactory</em></span></h4></div></div></div><p>Open the <code class="literal">JmsInfrastructureConfig</code> configuration class. Add the
+		<code class="literal">@EnableJms</code> annotation on top of it to detect
+		<code class="literal">@JmsListener</code> annotations. 
+		
+		
+		Then, declare a <code class="literal">jmsListenerContainerFactory</code>
+		bean of type <code class="literal">DefaultJmsListenerContainerFactory</code>. Don't forget to
+		inject the <code class="literal">cachingConnectionFactory</code> bean into it.
+		The <code class="literal">jmsListenerContainerFactory</code> bean will create the actual listener objects when <code class="literal">@JmsListener</code>
+		annotations are used.		
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2615"></a>4.3.1.7.&nbsp;Step 6. Wire the <span class="emphasis"><em>rewardNetwork</em></span> with
+        the <span class="emphasis"><em>@JmsListener</em></span> annotation</h4></div></div></div><p>Open up the <code class="literal">RewardNetworkImpl</code> class at the 
+        <code class="literal">rewardAccountFor</code> method level.
+        Use the <code class="literal">@JmsListener</code> annotation to listen on the
+        <code class="literal">rewards.queue.dining</code> queue. Use also the <code class="literal">@SendTo</code>
+        annotation to send the method output to the <code class="literal">rewards.queue.confirmation</code>
+        queue.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Tip: Understanding destination"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip: Understanding <span class="emphasis"><em>destination</em></span></th></tr><tr><td align="left" valign="top"><p>When using the <span class="emphasis"><em>@JmsListener</em></span> annotation,
+          you'll need to specify the <span class="emphasis"><em>destination</em></span>
+          attribute. This signifies what JMS destination the listener should
+          poll. Earlier in the lab, you provided a
+          <span class="emphasis"><em>destination</em></span> property to the
+          <span class="emphasis"><em>JmsTemplate</em></span> bean, which was a reference to the
+          bean named <span class="emphasis"><em>diningQueue</em></span>. In this case, you're
+          specifying not a reference to a bean, but rather the <span class="emphasis"><em>name
+          of the destination</em></span> as it exists in the JMS broker. So,
+          use <span class="emphasis"><em>rewards.queue.dining</em></span> for the value of
+          <span class="emphasis"><em>destination</em></span>.</p></td></tr></table></div><p>Now run the test again to confirm that this is working. If
+        you've got the green bar, you've successfully put together an
+        asynchronous processing pipeline for <span class="emphasis"><em>Dining</em></span>
+        objects. Congratulations!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rest-intro-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="jms-tx-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;3.&nbsp;rest-intro: Introduction to RESTful Applications with Spring&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;5.&nbsp;jms-tx: Add Transactional Capabilities to the JMS Interaction</td></tr></table></div></body></html>

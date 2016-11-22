@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/stream http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd">
+
+	<!-- **** Step 1 without SI -->
+<!-- 	<bean id="messageProcessor" class="demo.MessageProcessorImpl" /> -->
+	
+	<!--  **** Step 2 with SI and MessagingTemplate -->
+	
+<!-- 	<bean class="org.springframework.integration.core.MessagingTemplate" /> -->
+
+<!-- 	<int:channel id="messages" /> -->
+
+<!-- 	<int-stream:stdout-channel-adapter channel="messages" /> -->
+	
+<!-- 	<int:logging-channel-adapter channel="messages" -->
+<!-- 		logger-name="demo.log" log-full-message="true"/> -->
+	
+	<!--  **** Step 3 with SI, Gateway and Service Activator -->
+	
+	<int:gateway id="messageProcessor" service-interface="demo.MessageProcessor"
+		default-request-channel="messages" />
+	
+	<int:channel id="messages" />
+		
+	<int:filter expression="payload.startsWith('Hello')" 
+		input-channel="messages" output-channel="helloMessages"
+		discard-channel="goodbyeMessages" />
+
+	<int:channel id="helloMessages" />
+	
+	<int:service-activator input-channel="helloMessages"
+		ref="logger" method="logHello" />
+
+	<int:channel id="goodbyeMessages" />
+	
+	<int:object-to-json-transformer
+		input-channel="goodbyeMessages" output-channel="jsonGoodbyeMessages"/>
+		
+	<int:channel id="jsonGoodbyeMessages"/>
+
+	<int:service-activator ref="logger" method="logGoodbye"
+		input-channel="jsonGoodbyeMessages" />
+	
+	<bean id="logger" class="demo.Logger" />
+
+</beans>

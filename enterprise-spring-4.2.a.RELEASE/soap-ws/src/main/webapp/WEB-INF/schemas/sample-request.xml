@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rewardAccountForDiningRequest
+	xmlns="http://www.springsource.com/reward-network" >
+
+	<!-- TODO 01: Complete this sample dining request message 
+	by adding attributes for amount, creditCardNumber, and merchantNumber.
+	Provide sample values to help the XSD generation logic correctly guess the right datatypes.
+	Save your work.
+	-->
+	
+	<!-- TODO 02: Execute the ws-1 Trang.launch file in your project root. 
+	It will create the src/main/webapp/WEB-INF/schemas/trang-schema.xsd file.  
+	-->
+	
+</rewardAccountForDiningRequest>

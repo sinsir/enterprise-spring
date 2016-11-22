@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jms="http://www.springframework.org/schema/jms"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+              http://www.springframework.org/schema/beans/spring-beans.xsd
+              http://www.springframework.org/schema/jms
+              http://www.springframework.org/schema/jms/spring-jms.xsd">
+
+
+    <!--    xTODO 03: Execute the following tasks:
+		 
+			         1. Create a JmsTemplate, and inject the cachedConnectionFactory 
+				        as well as the defaultDestination (diningQueue).
+
+			         2. Inject JMSTemplate into the diningProcessor bean
+
+			         3. Run the test. It should succeed.
+
+	-->
+	
+	<bean id="diningProcessor" class="rewards.messaging.client.JmsDiningProcessor">
+		<property name="jmsTemplate" ref="jmsTemplate"/>
+	</bean>
+
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="cachingConnectionFactory"/>
+		<property name="defaultDestination" ref="diningQueue"/>
+	</bean>
+	
+	<!-- bean id="diningQueue"
+		class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg value="rewards.queue.dining"/>
+	</bean-->
+	
+
+	<bean id="confirmationLogger" class="rewards.messaging.client.RewardConfirmationLogger" />
+
+	<bean id="jmsListenerContainerFactory" class="org.springframework.jms.config.DefaultJmsListenerContainerFactory">
+		<property name="connectionFactory" ref="cachingConnectionFactory" />
+	</bean>
+
+</beans>

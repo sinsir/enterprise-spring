@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+	xmlns:context="http://www.springframework.org/schema/context">
+
+	<context:mbean-export/>
+	
+	<bean class="rewards.ui.DiningEntry">
+		<constructor-arg ref="rewardNetwork"/>
+	</bean>
+
+	<bean id="rewardNetwork" class="org.springframework.remoting.rmi.RmiProxyFactoryBean">
+		<property name="serviceInterface" value="rewards.RewardNetwork"/>
+		<property name="serviceUrl" value="rmi://localhost:1099/rewardNetwork"/>
+		<property name="refreshStubOnConnectFailure" value="true"/>
+	</bean>
+
+</beans>

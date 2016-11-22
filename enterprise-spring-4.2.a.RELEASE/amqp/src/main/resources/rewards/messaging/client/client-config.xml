@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+
+	<bean id="diningProcessor" class="rewards.messaging.client.AmqpDiningProcessor">
+	</bean>
+
+    <!--    TODO 03: Execute the following tasks:
+		 
+		 			 1. Create a RabbitTemplate bean, and inject the rabbitConnectionFactory 
+				        (from amqp-infrastructure-config.xml) bean into it.
+
+			         2. Inject RabbitTemplate into the diningProcessor bean
+
+			         3. Run the test. It should succeed.
+
+	-->
+	
+	<bean id="confirmationLogger" class="rewards.messaging.client.RewardConfirmationLogger"/>
+
+	<rabbit:listener-container connection-factory="rabbitConnectionFactory">
+		<rabbit:listener ref="confirmationLogger" method="log" queue-names="rewards.queue.confirmation"/>
+	</rabbit:listener-container>
+
+</beans>

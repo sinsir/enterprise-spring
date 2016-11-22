@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+	xmlns:context="http://www.springframework.org/schema/context">
+
+	<context:mbean-export/>
+	
+	<bean class="rewards.ui.DiningEntry">
+		<constructor-arg ref="rewardNetwork"/>
+	</bean>
+
+	<!-- TODO 02: Execute the following tasks:
+	
+		1. Define the 'rewardNetwork' bean (as an RmiProxyFactoryBean).
+		
+		2. Run the client-side DiningEntryUI application, DiningEntryUI class, with the following values. 
+		   You will encounter NotSerializableException.
+		
+		Dining amount: 100
+		Member credit card number: 1234123412341234
+		Merchant number: 1234567890
+					 
+	 -->
+
+</beans>

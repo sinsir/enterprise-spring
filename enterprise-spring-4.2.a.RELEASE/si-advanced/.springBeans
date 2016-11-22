@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beansProjectDescription>
+	<version>1</version>
+	<pluginVersion><![CDATA[3.1.0.201210040510-RELEASE]]></pluginVersion>
+	<configSuffixes>
+		<configSuffix><![CDATA[xml]]></configSuffix>
+	</configSuffixes>
+	<enableImports><![CDATA[true]]></enableImports>
+	<configs>
+		<config>src/test/resources/rewards/messaging/BatchedDiningSplitterIntegrationTests-context.xml</config>
+		<config>src/test/resources/rewards/messaging/InboundFileDiningIntegrationTests-context.xml</config>
+		<config>src/test/resources/rewards/messaging/MarshallingIntegrationTests-context.xml</config>
+		<config>src/main/resources/rewards/messaging/spring-integration-idempotent-receiver-config.xml</config>
+		<config>src/main/resources/rewards/messaging/spring-integration-infrastructure-config.xml</config>
+		<config>src/main/resources/rewards/messaging/spring-integration-marshalling-config.xml</config>
+		<config>src/main/resources/rewards/messaging/spring-integration-xml-splitting-config.xml</config>
+	</configs>
+	<configSets>
+	</configSets>
+</beansProjectDescription>

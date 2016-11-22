@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ws="http://www.springframework.org/schema/web-services"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+	
+	<context:component-scan base-package="rewards.ws"/>
+	
+	<!-- registers all infrastructure beans needed for annotation-based 
+	     endpoints, incl. JAXB2 (un)marshalling: -->
+	<ws:annotation-driven/>
+	
+	<!-- TODO 02: Add an <ws:interceptors> element with a PayloadLoggingInterceptor, 
+				  and restart the application. Re-run the test.  It should pass 
+				  and you should see requests and responses logged in the console.  -->
+	
+	
+	
+	<!-- TODO 07: Add a PayloadValidatingInterceptor that validates request against the reward-network.xsd schema.
+				  Re-run the test, it should pass. -->
+	
+	
+	
+
+	<!-- TODO 09: Add a SoapFaultMappingExceptionResolver that maps Spring's 
+	    		  EmptyResultDataAccessException to a CLIENT fault.  All other exceptions
+	    		  should result in SERVER faults.  Set the order property to -1 to make 
+	    		  sure it is first resolver used.  Re-run the test, it should pass. -->
+
+
+
+	
+	<!-- TODO 05: Move the schemas directory to the src/main/resources directory.  Update 
+				  the location attribute below. Run the test, it should now pass.  -->
+	<ws:dynamic-wsdl id="rewardNetworkDefinition" portTypeName="Rewards" 
+	                 locationUri="http://localhost:8080/ws-advanced/rewards">
+		<ws:xsd location="/WEB-INF/schemas/reward-network.xsd"/>
+	</ws:dynamic-wsdl>
+
+</beans>

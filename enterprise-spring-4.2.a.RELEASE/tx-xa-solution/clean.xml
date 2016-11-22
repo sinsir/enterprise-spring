@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<project name="tx-xa-1-solution" default="clean">
+	<target name="clean">
+		<delete dir="${basedir}/rewardsdb" quiet="true" />
+		<delete dir="${basedir}/activemq-data" quiet="true" />
+		<delete dir="${basedir}" includes="*tm*.*"/>
+	</target>
+</project>

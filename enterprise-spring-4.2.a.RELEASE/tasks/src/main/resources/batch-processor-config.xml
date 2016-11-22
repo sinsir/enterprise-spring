@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+	xmlns:context="http://www.springframework.org/schema/context">
+
+	<import resource="classpath:/db-config.xml"/>
+
+	<bean id="rewardNetwork" class="rewards.internal.SlowRewardNetwork">
+		<constructor-arg>
+			<bean class="rewards.internal.RewardNetworkImpl">
+				<constructor-arg ref="accountRepository"/>
+				<constructor-arg ref="restaurantRepository"/>
+				<constructor-arg ref="rewardRepository"/>
+			</bean>
+		</constructor-arg>
+	</bean>
+	<bean id="accountRepository" class="rewards.internal.account.JdbcAccountRepository">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	<bean id="restaurantRepository" class="rewards.internal.restaurant.JdbcRestaurantRepository">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	<bean id="rewardRepository" class="rewards.internal.reward.JdbcRewardRepository">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+
+	<bean id="diningBatchProcessor" class="rewards.batch.DiningBatchProcessorImpl">
+		<constructor-arg ref="rewardNetwork"/>
+	</bean>
+
+</beans>

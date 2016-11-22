@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${batch.jdbc.driver}" />
+		<property name="url" value="${batch.jdbc.url}" />
+		<property name="username" value="${batch.jdbc.user}" />
+		<property name="password" value="${batch.jdbc.password}" />
+		<property name="validationQuery" value="${batch.jdbc.validationQuery}"/>
+		<property name="maxActive" value="100"/>
+	</bean>
+
+	<!-- Override the default database initializer in batch admin -->
+	<bean name="org.springframework.jdbc.datasource.init.DataSourceInitializer#0, org.springframework.jdbc.datasource.init.DataSourceInitializer#1,org.springframework.jdbc.datasource.init.DataSourceInitializer#2" class="java.lang.String"/>
+
+	<!--  Initialize the database -->
+	<jdbc:initialize-database data-source="dataSource" ignore-failures="DROPS">
+		<jdbc:script location="classpath:org/springframework/batch/core/schema-drop-hsqldb.sql"/>
+		<jdbc:script location="classpath:org/springframework/batch/core/schema-hsqldb.sql"/>
+		<jdbc:script location="classpath:db-schema.sql"/>
+		<jdbc:script location="classpath:partition-schema.sql"/> 
+		<jdbc:script location="classpath:db-test-data.sql"/>
+	</jdbc:initialize-database>
+
+</beans>

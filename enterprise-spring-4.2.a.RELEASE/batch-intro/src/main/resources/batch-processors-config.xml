@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:property-placeholder location="classpath:batch.properties"/>
+
+	<!-- xTODO 01: Define a bean named "confirmationReader" of type JmsItemReader.
+	Inject it with the receivingJmsTemplate, which is already setup to read from the "confirmation.queue"
+	 -->
+	 <bean id="confirmationReader" class="org.springframework.batch.item.jms.JmsItemReader">
+	 	<property name="jmsTemplate" ref="receivingJmsTemplate" />
+	 </bean>
+	  
+	<!-- xTODO 02: Define a bean named "confirmationUpdater" of type JdbcBatchItemWriter.  Set its dataSource property.
+	Set its SQL statement to "update T_DINING set CONFIRMED=1 where ID=?".
+	To control how the parameter is set in the batched update, set the itemPreparedStatementSetter to 
+	reference the "confirmationPreparedStatementPreparer" bean.  See the next step to understand what this
+	bean is doing. 
+	-->
+	<bean id="confirmationUpdater" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+	 	<property name="dataSource" ref="dataSource" />
+	 	<property name="sql" value="update T_DINING set CONFIRMED=1 where ID=?" />
+	 	<property name="itemPreparedStatementSetter" ref="confirmationPreparedStatementPreparer" />
+	 </bean>
+	
+	<!-- xTODO 03: The last step defined a writer to perform efficient batched updates on the database.
+	Batched updates use prepared statements, and prepared statements need to have their parameters
+	set for each statement in the batch.  Examine the SQL statement used in the last step, and
+	compare it with the code in the class defined here.  When you feel you understand how the
+	Confirmation's ID gets set on the update statement, move on to the next step.  -->
+	<bean id="confirmationPreparedStatementPreparer" class="ccp.batch.ConfirmationPreparedStatementPreparer"/>
+
+	<bean id="unconfirmedDiningsReader" class="org.springframework.batch.item.database.JdbcPagingItemReader" lazy-init="true">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="fetchSize" value="${chunk.size}"/>
+		<property name="pageSize" value="${chunk.size}"/>
+		<!-- xTODO 07: inject a properly configured SqlPagingQueryProviderFactoryBean 
+		     for the queryProvider property as an inner bean.
+		     set the properties controlling the SQL statement based on the db-schema.sql file.
+		     For more help see the detailed instructions.  -->
+		 <property name="queryProvider">
+		 	<bean class="org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean">
+		 		<property name="dataSource" ref="dataSource"/>
+		 		<property name="selectClause" value="select *" />
+		 		<property name="fromClause" value="from T_DINING" />
+		 		<property name="whereClause" value="where CONFIRMED=0" />
+		 		<property name="sortKey" value="ID" />
+		 	</bean>
+		 </property>
+		<!-- xTODO 08: inject a DiningMapper for the rowMapper property as an inner bean -->
+		<property name="rowMapper">
+			<bean class="ccp.batch.DiningMapper" />
+		</property>
+	</bean>
+
+	<!-- xTODO 10: create a requestSender bean definition of type JmsItemWriter -->
+	<bean id="requestSender" class="org.springframework.batch.item.jms.JmsItemWriter">
+		<property name="jmsTemplate" ref="sendingJmsTemplate" />
+	</bean>
+</beans>

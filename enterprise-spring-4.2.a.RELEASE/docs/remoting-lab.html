@@ -1,0 +1,246 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;15.&nbsp;remoting: Distributing an application using RMI and Spring
+  Remoting</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="amqp-lab.html" title="Chapter&nbsp;14.&nbsp;amqp: Simplifying Messaging with Spring's AMQP Support"><link rel="next" href="soap-ws-lab.html" title="Chapter&nbsp;16.&nbsp;soap-ws: Exposing SOAP Endpoints using Spring Web Services"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="remoting-lab"></a>Chapter&nbsp;15.&nbsp;remoting: Distributing an application using RMI and Spring
+  Remoting</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="remoting-lab-introduction"></a>15.1.&nbsp;Introduction</h2></div></div></div><p>In this lab you will learn how to distribute a client-server
+    application across the network using Spring's support for the
+    <span class="emphasis"><em>Remoting</em></span> style of integration.</p><div class="orderedlist"><p class="title"><b>What you will learn</b></p><ol type="1"><li><p>How to configure service exporters</p></li><li><p>How to configure client side proxies</p></li><li><p>Serialization</p></li><li><p>Recovering from broken connections</p></li></ol></div><p>Estimated time to complete: 30 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="remoting-lab-quick-instructions"></a>15.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions</p><div class="orderedlist"><ol type="1"><li><p><span class="bold"><strong>Define a bean of type RmiServiceExporter
+        (TODO 01) </strong></span> </p><p>Find and open rmi-exporter-config.xml in the rewards.remoting
+        package of the remoting-server project. Complete TODO 01 by creating a
+        bean definition of type RmiServiceExporter. Optionally set
+        'alwaysCreateRegistry' to 'true' to avoid the time-consuming registry
+        lookup.</p></li><li><p><span class="bold"><strong>Define the 'rewardNetwork' bean (as an
+        RmiProxyFactoryBean) (TODO 02) </strong></span> </p><p>Open diningentry-config.xml in the rewards.ui package of the
+        remoting-client project. Complete TODO 02 by creating a bean named
+        rewardNetwork of type RmiProxyFactoryBean and provide the
+        serviceInterface and serviceUrl properties.</p></li><li><p><span class="bold"><strong>Assert that 'dining' &amp; 'confirmation'
+        is serializable (TODO 03 and TODO 04) </strong></span> </p><p>Complete the test implementation by calling the
+        assertSerializable() method where appropriate.</p></li><li><p><span class="bold"><strong>Make Dining serializable (TODO
+        05)</strong></span> </p><p>Find and open the rewards.Dining class within the
+        remoting-distributed-api project. Complete TODO 05 by enhancing the
+        class definition to implement the java.io.Serializable
+        interface..</p></li><li><p><span class="bold"><strong>Make MonetaryAmount, SimpleDate,
+        RewardConfirmation, AccountContribution, Percentage serializable (TODO
+        06-10)</strong></span> </p><p>Make all shared types are serializable and both tests in
+        SerializabilityTests pass with a green bar</p></li><li><p>Run the distributed application.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="remoting-lab-instructions"></a>15.3.&nbsp;Instructions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e7502"></a>15.3.1.&nbsp;Exporting and Consuming the Remote Service</h3></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7505"></a>15.3.1.1.&nbsp;Step 1: Review the client-side
+        <span class="emphasis"><em>DiningEntryUI</em></span> application</h4></div></div></div><p>If you are not already familiar with the command-line
+        <span class="emphasis"><em>DiningEntryUI</em></span>, take a moment to review it by
+        opening <span class="emphasis"><em>rewards.ui.DiningEntryUI</em></span> in the
+        <span class="emphasis"><em>src/main/java</em></span> folder of the
+        <span class="emphasis"><em>remoting-client</em></span> project.</p><p>Notice it consists of a simple <span class="emphasis"><em>main</em></span> method
+        that bootstraps a Spring <span class="emphasis"><em>ApplicationContext</em></span> for
+        the <span class="emphasis"><em>diningentry-config.xml</em></span> file. Once the
+        DiningEntry instance is instantiated, its <span class="emphasis"><em>start()</em></span>
+        method is called in order to start a simple command-line
+        interface.</p><p>Open <span class="emphasis"><em>diningentry-config.xml</em></span>, where you'll
+        see that there is one bean definition and a <span class="emphasis"><em>TODO</em></span>.
+        You'll complete the <span class="emphasis"><em>TODO</em></span> later, but for now take
+        a look at the <span class="emphasis"><em>rewards.ui.DiningEntry</em></span> class to
+        make sure you understand how it functions. Its
+        <code class="methodname">start()</code> is called from within the
+        <code class="methodname">main()</code> method of the
+        <code class="classname">DiningEntryUI</code> class.</p><p>Notice that <span class="emphasis"><em>DiningEntry</em></span> requires a
+        <span class="emphasis"><em>RewardNetwork</em></span> instance as a constructor argument.
+        Take a look at the <span class="emphasis"><em>acceptDiningInput()</em></span> method and
+        you'll see that <span class="emphasis"><em>DiningEntry</em></span> simply accepts user
+        input through a series of prompts at the command line, builds up a new
+        <span class="emphasis"><em>Dining</em></span> instance based on that input and then
+        calls the <span class="emphasis"><em>rewardAccountFor(Dining)</em></span> method on the
+        <span class="emphasis"><em>RewardNetwork</em></span> object.</p><p>Once you're clear about how the application works, move on to
+        the next step!</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7587"></a>15.3.1.2.&nbsp;Step 2: Define the server-side RMI service exporter</h4></div></div></div><p>Spring provides <span class="emphasis"><em>exporters</em></span> that allow you
+        decorate existing POJOs in order to expose them as remote endpoints.
+        In this step, you will configure an exporter to expose the existing
+        <span class="emphasis"><em>RewardNetworkImpl</em></span> bean via RMI. This will be done
+        without touching a single line of code - only Spring configuration
+        will change.</p><p>Find and open <span class="emphasis"><em>rmi-exporter-config.xml</em></span> in
+        the <span class="emphasis"><em>rewards.remoting</em></span> package of the
+        <span class="emphasis"><em>remoting-server</em></span> project. Complete <span class="emphasis"><em>TODO
+        01</em></span> by creating a bean definition of type
+        <span class="emphasis"><em>RmiServiceExporter</em></span>. You will need to provide the
+        following properties:</p><div class="itemizedlist"><ul type="disc"><li><p><span class="emphasis"><em>service</em></span> (the reference to the bean to
+            be exported)</p></li><li><p><span class="emphasis"><em>serviceInterface</em></span> (the interface that
+            the POJO implements)</p></li><li><p><span class="emphasis"><em>serviceName</em></span> (the name used when binding
+            to the RMI registry, e.g.: 'rewardNetwork')</p></li></ul></div><p>When setting the <span class="emphasis"><em>service</em></span> property, the bean
+        reference should be to the actual 'rewardNetwork' bean that is
+        imported.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">You can set the <span class="emphasis"><em>alwaysCreateRegistry</em></span>
+        property to <span class="emphasis"><em>true</em></span> in order to save time on startup
+        (there is no need to search for an existing RMI registry during
+        testing)</td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7644"></a>15.3.1.3.&nbsp;Step 3: Start the server-side RMI endpoint</h4></div></div></div><p>In this step you'll verify that the exporter configuration is
+        correct by starting the remote endpoint.</p><p>Find and run the <span class="emphasis"><em>RmiExporterBootstrap</em></span> class
+        in the <span class="emphasis"><em>rewards.remoting</em></span> package of the
+        <span class="emphasis"><em>remoting-server</em></span> project. Right-click on the class
+        and choose <span class="emphasis"><em>Run As -&gt; Java Application</em></span> to start
+        the application.</p><p>At the bottom of the console, you should see the following,
+        letting you know that the <span class="emphasis"><em>rewardNetwork</em></span> has been
+        successfully exported.</p><pre class="programlisting">
+INFO: Binding service 'rewardNetwork' to RMI registry:
+ RegistryImpl_Stub[UnicastRef [liveRef: 
+  [endpoint:[192.168.1.3:1099](local),objID:[0:0:0, 0]]]]
+   </pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top">Notice that the process continues to run indefinitely. This
+        server process needs to be long-running in order to accept client
+        connections.</td></tr></table></div><p>Once this is complete, leave the server running and move on to
+        the next step!</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7674"></a>15.3.1.4.&nbsp;Step 4: Define the client-side RMI proxy</h4></div></div></div><p>In this step you'll wire up the existing
+        <span class="emphasis"><em>DiningEntryUI</em></span> application to communicate over the
+        wire to the remote endpoint you set up in the previous step.</p><p>Just as configuring the remote endpoint required no code
+        changes, neither will consuming the endpoint.</p><p>Briefly open <span class="emphasis"><em>rewards.ui.DiningEntry</em></span> in the
+        <span class="emphasis"><em>src/main/java</em></span> directory of the
+        <span class="emphasis"><em>remoting-client</em></span> project. Recall from Step 1 that
+        the <span class="emphasis"><em>DiningEntry</em></span> object needs just one dependency:
+        an implementation of <span class="emphasis"><em>RewardNetwork</em></span>. Your job in
+        this step is to provide an implementation of
+        <span class="emphasis"><em>RewardNetwork</em></span> capable of communicating over the
+        RMI to the remote endpoint.</p><p>To do that, open <span class="emphasis"><em>diningentry-config.xml</em></span> in
+        the <span class="emphasis"><em>rewards.ui</em></span> package of the
+        <span class="emphasis"><em>remoting-client</em></span> project. Complete <span class="emphasis"><em>TODO
+        02</em></span> by creating a bean named
+        <span class="emphasis"><em>rewardNetwork</em></span> of type
+        <span class="emphasis"><em>RmiProxyFactoryBean</em></span> and provide the
+        <span class="emphasis"><em>serviceInterface</em></span> and
+        <span class="emphasis"><em>serviceUrl</em></span> properties.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">The URL will be of the form:
+        <span class="emphasis"><em>rmi://host:port/serviceName</em></span>. Use 'localhost' for
+        the host name and 1099 (the default RMI port) for the port
+        number.</td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7735"></a>15.3.1.5.&nbsp;Step 5: Run the client-side <span class="emphasis"><em>DiningEntryUI</em></span>
+        application</h4></div></div></div><p>In this step you'll verify that RMI communication between the
+        client and server endpoints works as expected.</p><p>Locate the <span class="emphasis"><em>DiningEntryUI</em></span> class in the
+        Package Explorer view. Right-click and select <span class="emphasis"><em>Run
+        as-&gt;Java Application</em></span>.</p><p>As the application starts up, you'll be presented with the
+        following prompt:</p><pre class="programlisting">
+Welcome to the Rewards Network dining entry UI
+
+Please enter the following information to create and 
+                               process a new dining event
+
+Dining amount: 
+   </pre><p>Enter a valid dining event by supplying the following values
+        when prompted:</p><div class="itemizedlist"><ul type="disc"><li><p>
+              <span class="emphasis"><em>Dining amount: 100</em></span>
+            </p></li><li><p>
+              <span class="emphasis"><em>Member credit card number: 1234123412341234</em></span>
+            </p></li><li><p>
+              <span class="emphasis"><em>Merchant number: 1234567890</em></span>
+            </p></li></ul></div><p>After entering the merchant number, you should see the following
+        error:</p><pre class="programlisting">
+dining entry error! message was: Could not access remote 
+             service [rmi://localhost:1099/rewardNetwork]; 
+nested exception is 
+   java.rmi.MarshalException: error marshalling arguments; 
+nested exception is: 
+   java.io.NotSerializableException: rewards.Dining
+   </pre><p>The problem is that you're trying to send objects across the
+        wire that do not implement <span class="emphasis"><em>java.io.Serializable</em></span>.
+        In the next step, you'll fix this problem.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7785"></a>15.3.1.6.&nbsp;Step 6: Make shared types serializable</h4></div></div></div><p>One of the constraints of using RMI as a remoting protocol is
+        that all types that are distributed across the wire must be
+        'serializable', i.e. must implement the
+        <span class="emphasis"><em>java.io.Serializable</em></span> marker interface.</p><p>In this step, you'll go through the process of making a set of
+        classes serializable. To aid in this process, a unit test has been
+        started for you. In the <span class="emphasis"><em>remoting-distributed-api</em></span>
+        project, find and open the
+        <span class="emphasis"><em>rewards.SerializabilityTests</em></span> class. Go ahead and
+        run the test by right-clicking and selecting <span class="emphasis"><em>Run
+        as-&gt;JUnit Test</em></span>. Notice that the bar is green, but this
+        is only because the test does not yet perform any assertions.</p><p>Complete the test implementation by calling the
+        <span class="emphasis"><em>assertSerializable()</em></span> method where appropriate
+        (<span class="emphasis"><em>TODO 03</em></span>, <span class="emphasis"><em>TODO 04</em></span>)</p><p>Now, run the test once more and notice that the bar is red. Look
+        at the failure message for the
+        <span class="emphasis"><em>testDiningIsSerializable()</em></span> test method. It should
+        read:</p><pre class="programlisting">
+java.io.NotSerializableException: rewards.Dining
+	...
+   </pre><p>To fix this, find and open the
+        <span class="emphasis"><em>rewards.Dining</em></span> class within the
+        <span class="emphasis"><em>remoting-distributed-api</em></span> project. Complete
+        <span class="emphasis"><em>TODO 05</em></span> by enhancing the class definition to
+        implement the <span class="emphasis"><em>java.io.Serializable</em></span>
+        interface.</p><p>Run <span class="emphasis"><em>SerializabilityTests</em></span> once more. Notice
+        that this time, the bar is still red, but it no longer complains about
+        <span class="emphasis"><em>rewards.Dining</em></span> - this time it's
+        <span class="emphasis"><em>common.money.MonetaryAmount</em></span>. This type is also in
+        the <span class="emphasis"><em>remoting-distributed-api</em></span> project. Update this
+        class to implement <span class="emphasis"><em>Serializable</em></span> as well
+        (<span class="emphasis"><em>TODO 06</em></span>), and repeat this process until all
+        shared types are serializable and both tests in
+        <span class="emphasis"><em>SerializabilityTests</em></span> pass with a green bar
+        (<span class="emphasis"><em>TODOs 07-10</em></span>).</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top">As you can see from the process above, for an object to be
+        <span class="emphasis"><em>Serializable</em></span>, all of its fields' classes must be
+        serializable too. This cascading effect means that we can't just mark
+        <span class="emphasis"><em>Dining</em></span> as <span class="emphasis"><em>Serializable</em></span>, we
+        have to walk the entire network of classes associated with
+        <span class="emphasis"><em>Dining</em></span> and make them implement
+        <span class="emphasis"><em>Serializable</em></span> as well.</td></tr></table></div><p>Now you're ready to move on to the final step and see the
+        distributed application in action.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7881"></a>15.3.1.7.&nbsp;Step 7: Run the distributed application</h4></div></div></div><p><span class="emphasis"><em>TODO 11</em></span>: Open or make visible the *Console* view in STS. Make sure that
+        any running processes are terminated by clicking the red *Terminate*
+        and gray *Remove All Terminated Launches* buttons until the Console
+        reads <span class="emphasis"><em>"No consoles to display at this
+        time"</em></span>.</p><div class="mediaobject"><img src="images/no-consoles-to-display.png"></div><p>Now, as before, start the
+        <span class="emphasis"><em>RmiExporterBootstrap</em></span> using <span class="emphasis"><em>Run
+        As-&gt;Java Application</em></span>. Again, you should see</p><pre class="programlisting">
+INFO: Binding service 'rewardNetwork' to RMI registry: 
+ RegistryImpl_Stub[UnicastRef 
+  [liveRef: 
+   [endpoint:[192.168.1.3:1099](local),objID:[0:0:0, 0]]]]
+   </pre><p>Leave that process running, and start
+        <span class="emphasis"><em>DiningEntryUI</em></span> using <span class="emphasis"><em>Run As-&gt;Java
+        Application</em></span>. As before, you'll be prompted to enter dining
+        information. Enter the valid information below:</p><div class="itemizedlist"><ul type="disc"><li><p>
+              <span class="emphasis"><em>Dining amount: 100</em></span>
+            </p></li><li><p>
+              <span class="emphasis"><em>Member credit card number: 1234123412341234</em></span>
+            </p></li><li><p>
+              <span class="emphasis"><em>Merchant number: 1234567890</em></span>
+            </p></li></ul></div><p>This time, the transaction should succeed and you'll see the
+        following:</p><pre class="programlisting">
+Dining of $100.00 charged to '1234123412341234' by 
+                         '1234567890' on 4/22/09 12:00 AM
+Reward of $8.00 applied to account 123456789. 
+                              RewardConfirmation id is: 1
+
+Would you like to enter another Dining event? [y/n]: 
+   </pre><p>Congratulations! You've just created a distributed application
+        using Spring Remoting. While some code changes were necessary to the
+        rewards object model in order to support serialization, no code
+        changes were required for either our service layer POJO
+        (<span class="emphasis"><em>RewardNetwork/RewardNetworkImpl</em></span>), nor for the
+        client (<span class="emphasis"><em>DiningEntry/DiningEntryUI</em></span>)
+        classes.</p></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="remoting-lab-bonus"></a>15.4.&nbsp;Bonus</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e7946"></a>15.4.1.&nbsp;Bonus #1: Break the Application</h3></div></div></div><p>It's quite easy to see how fragile a distributed application can
+      be. Simply terminate the <span class="emphasis"><em>RmiExporterBootstrap</em></span>
+      process and attempt to enter another dining via the currently running
+      <span class="emphasis"><em>DiningEntryUI</em></span> process. You'll see the error:</p><pre class="programlisting">
+dining entry error! message was: Could not connect to 
+     remote service [rmi://localhost:1099/rewardNetwork]; 
+nested exception is 
+ java.rmi.ConnectException: Connection refused to host: 
+                                              192.168.1.3; 
+nested exception is: 
+ java.net.ConnectException: Connection refused
+  </pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e7959"></a>15.4.2.&nbsp;Bonus #2: Make the Application More Robust</h3></div></div></div><p>Restart the server by running the
+      <span class="emphasis"><em>RmiExporterBootstrap</em></span> again and then attempt to
+      enter another dining through the <span class="emphasis"><em>DiningEntryUI</em></span>
+      console. Notice that you still get the same "Connection refused"
+      message?</p><p>This is because by default, once the connection from the
+      client-side proxy to the RMI server is broken, that connection never
+      gets re-established. You can, however, configure Spring to attempt to
+      reconnect and thus be a bit more resilient to these kinds of
+      failures.</p><p>Open the <span class="emphasis"><em>diningentry-config.xml</em></span> file once
+      again. On the <span class="emphasis"><em>rewardNetwork</em></span> bean defintion, provide
+      the <span class="emphasis"><em>refreshStubOnConnectFailure</em></span> property with a
+      value of <span class="emphasis"><em>true</em></span>.</p><p>Now complete the following steps:</p><div class="orderedlist"><ol type="1"><li><p>Start <span class="emphasis"><em>DiningEntryUI</em></span> and enter a valid
+          dining (use the values above)</p></li><li><p>Stop the <span class="emphasis"><em>RmiExporterBootstrap</em></span> server
+          process</p></li><li><p>Enter another valid dining. Notice the
+          <span class="emphasis"><em>ConnectException</em></span> occurs as expected.</p></li><li><p>Restart <span class="emphasis"><em>RmiExporterBootstrap</em></span>. The server
+          side is now up again.</p></li><li><p>Enter another dining from <span class="emphasis"><em>DiningEntryUI</em></span>
+          console. Notice that this time, the dining succeeds! The
+          Spring-generated RMI proxy has been configured to try to reconnect
+          if it receives a connection failure, and that's just what
+          happened.</p></li></ol></div><pre class="programlisting">
+WARN : org.springframework.remoting.rmi.RmiProxyFactoryBean
+        - Could not connect to RMI service 
+           [rmi://localhost:1099/rewardNetwork] - retrying
+
+Result: Reward of $8.00 applied to account 123456789. 
+    RewardConfirmation id is: 1
+  </pre></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="amqp-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="soap-ws-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;14.&nbsp;amqp: Simplifying Messaging with Spring's AMQP Support&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;16.&nbsp;soap-ws: Exposing SOAP Endpoints using Spring Web Services</td></tr></table></div></body></html>

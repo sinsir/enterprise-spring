@@ -1,0 +1,264 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;13.&nbsp;Introduction to Spring XD</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="batch-admin-lab.html" title="Chapter&nbsp;12.&nbsp;batch-admin: Spring Batch Admin"><link rel="next" href="amqp-lab.html" title="Chapter&nbsp;14.&nbsp;amqp: Simplifying Messaging with Spring's AMQP Support"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="xd-intro-lab"></a>Chapter&nbsp;13.&nbsp;Introduction to Spring XD</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="xd-intro-lab-introduction"></a>13.1.&nbsp;Introduction</h2></div></div></div><p>
+        	In this lab, you'll get an overview of Spring XD.
+            This lab is made of 3 parts. In part 1, you'll install Spring XD. In part 2,
+            you'll be creating streams. In part 3, you'll be creating jobs.  
+        </p><div class="orderedlist"><p class="title"><b>What you will learn</b></p><ol type="1"><li><p>Installing and running a single-node instance of Spring XD
+				</p></li><li><p>Connecting to the Spring XD instance with the Spring XD shell
+				</p></li><li><p>Creating, deploying, and running some basic streams in Spring
+					XD</p></li><li><p>Deploying a simple batch process in Spring XD, without custom
+					coding</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Setting up Spring XD from scratch.</p></li><li><p>Using the XD shell to connect to Spring XD</p></li><li><p>Deploying streams and jobs with the shell</p></li></ol></div><p>
+            Estimated time to complete: 45 minutes
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="xd-installation-lab-installation"></a>13.2.&nbsp;Installation (PART 1)</h2></div></div></div><p>In this part you will single-node Spring XD instance, use the xd-shell to connect to it.</p><p>For classroom purposes, you can run Spring XD in standalone mode on any platform that supports Java,
+        	such as Windows, Mac, Linux, etc..  For production instances, Pivotal recommends running on Linux-based operating systems.  For 
+			  Mac OSX, there is a Homebrew installation available, and Pivotal also provides a yum install for 
+			  RedHat/CentOS.  These latter repositories (Homebrew and Yum) may not contain the most recent 
+			  release - the latest version can always be obtained from the Spring XD project website.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="xd-installation-lab-generic"></a>13.2.1.&nbsp;Generic Installation</h3></div></div></div><p>Since Spring XD is written in Java, it can be installed on essentially any platform that supports a JVM.
+				  Also, performing a generic installation (as opposed to using Homebrew or Yum) will result in getting 
+				  the latest version of the product running on your system.</p><div class="orderedlist"><ol type="1" compact><li><p>Download the latest version of Spring XD from the Spring website, <a href="http://projects.spring.io/spring-xd/" target="_top">http://projects.spring.io/spring-xd/</a>.
+						  All releases can be found at <a href="http://repo.spring.io/release/org/springframework/xd/spring-xd/" target="_top">
+						  http://repo.spring.io/release/org/springframework/xd/spring-xd/</a>, there you will find
+						  subdirectories containing various builds.  In this case we demonstrate installation of 
+						  the 1.2.1 release: <code class="code">spring-xd-1.2.1.RELEASE-dist.zip</code>.</p></li><li><p>Extract the archive into the directory of your choice.</p></li><li><p>Set the <code class="code">XD_HOME</code> environment variable to the <code class="code">xd</code> subdirectory of the installation:</p><p><code class="code">&lt;installation-directory&gt;/spring-xd-&lt;version&gt;.RELEASE/xd</code>. Ensure this environment
+					variable is always set up when you start Spring XD!</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="xd-installation-lab-osx"></a>13.2.2.&nbsp;Installation using Homebrew on Mac OSX</h3></div></div></div><p>A homebrew installation of Spring XD is available for installing on OSX.  Again, note that the version
+				  may not be the latest current release.</p><div class="orderedlist"><ol type="1" compact><li><p>To install Spring XD using homebrew simply add the <code class="code">pivotal/tap</code> using the 
+						  <code class="code">brew tap pivotal/tap</code> command.</p></li><li><p>Execute the <code class="code">brew install springxd</code> command.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="xd-installation-lab-centos"></a>13.2.3.&nbsp;Installation on RedHat/CentOS</h3></div></div></div><p>Spring XD can be installed from the Pivotal App-Suite yum repository on RedHat or CentOS.
+				  However, this requires a distributed mode configuration.  As a result, this won't be using
+                        this installation.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="xd-installation-lab-verification"></a>13.2.4.&nbsp;Verifying the Installation</h3></div></div></div><p>Now that you've completed the installation, let's verify that you can start the server and connect to it.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="xd-installation-lab-server-startup"></a>13.2.4.1.&nbsp;Starting the Spring XD Server</h4></div></div></div><div class="orderedlist"><ol type="1" compact><li><p>Start the server by running the <code class="code">xd-singlenode</code> server startup script.  On Windows you'll have to switch to the 
+						  <code class="code">&lt;installation-directory&gt;/spring-xd-&lt;version&gt;.RELEASE/xd/bin</code> directory first or provide
+						  the full path to the <code class="code">xd-singlenode.bat</code> batch file.  On a Linux-based system you can
+						  simply execute <code class="code">xd-singlenode</code>, assuming the script has execute permissions (chmod 777).</p><p>You should see the server start up, with the Spring XD ASCII-art logo output onto your console.</p><pre class="programlisting">$XD_HOME/xd/bin&gt;xd-singlenode
+
+ _____                           __   _______
+/  ___|          (-)             \ \ / /  _  \
+\ `--. _ __  _ __ _ _ __   __ _   \ V /| | | |
+ `--. \ '_ \| '__| | '_ \ / _` |  / ^ \| | | |
+/\__/ / |_) | |  | | | | | (_| | / / \ \ |/ /
+\____/| .__/|_|  |_|_| |_|\__, | \/   \/___/
+      | |                  __/ |
+      |_|                 |___/
+1.2.1.RELEASE                    eXtreme Data
+
+
+Started : SingleNodeApplication
+Documentation: https://github.com/spring-projects/spring-xd/wiki
+
+2015-08-17T10:22:30+0200 1.2.1.RELEASE INFO main singlenode.SingleNodeApplication - Starting SingleNodeApplication v1.2.1.RELEASE on acogoluegnes-xps with PID 7249 (/home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd/lib/spring-xd-dirt-1.2.1.RELEASE.jar started by acogoluegnes in /home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd)
+2015-08-17T10:22:30+0200 1.2.1.RELEASE INFO main singlenode.SingleNodeApplication - Started SingleNodeApplication in 1.255 seconds (JVM running for 3.036)
+10:22:34,691  INFO HSQLDB Server @4981d95b HSQLDB4F3AC0BF9B.ENGINE - Checkpoint start
+10:22:34,691  INFO HSQLDB Server @4981d95b HSQLDB4F3AC0BF9B.ENGINE - checkpointClose start
+10:22:34,746  INFO HSQLDB Server @4981d95b HSQLDB4F3AC0BF9B.ENGINE - checkpointClose end
+10:22:34,747  INFO HSQLDB Server @4981d95b HSQLDB4F3AC0BF9B.ENGINE - Checkpoint end - txts: 1
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD Home: /home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Transport: local
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Hadoop version detected from classpath 2.6.0
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD config location: file:/home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd/config//
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD config names: servers,application
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD module config location: file:/home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd/config//modules/
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD module config name: modules
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Admin web UI: http://acogoluegnes-xps:9393/admin-ui
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Zookeeper at: localhost:22854
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Zookeeper namespace: xd
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Analytics: memory
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO LeaderSelector-0 zk.DeploymentSupervisor - Leader Admin admin:default,admin,singlenode,hsqldbServer:9393 is watching for stream/job deployment requests.
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO main admin.AdminServerApplication - Started AdminServerApplication in 6.754 seconds (JVM running for 17.145)
+2015-08-17T10:22:44+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Path cache event: type=INITIALIZED
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD Home: /home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Transport: local
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Hadoop version detected from classpath 2.6.0
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD config location: file:/home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd/config//
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD config names: servers,application
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD module config location: file:/home/acogoluegnes/Downloads/spring-xd-1.2.1.RELEASE/xd/config//modules/
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - XD module config name: modules
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Container IP address: 10.0.1.6
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Container hostname:   acogoluegnes-xps
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Zookeeper at: localhost:22854
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Zookeeper namespace: xd
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main util.XdConfigLoggingInitializer - Analytics: memory
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main container.ContainerRegistrar - Container {ip=10.0.1.6, host=acogoluegnes-xps, groups=, pid=7249, id=e29d58eb-55e9-438d-8357-93f4cc83c4e1} joined cluster
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO main container.ContainerServerApplication - Started ContainerServerApplication in 0.742 seconds (JVM running for 18.897)
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Path cache event: path=/containers/e29d58eb-55e9-438d-8357-93f4cc83c4e1, type=CHILD_ADDED
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: type=INITIALIZED
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Container arrived: Container{name='e29d58eb-55e9-438d-8357-93f4cc83c4e1', attributes={ip=10.0.1.6, host=acogoluegnes-xps, groups=, pid=7249, id=e29d58eb-55e9-438d-8357-93f4cc83c4e1}}
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Scheduling deployments to new container(s) in 15000 ms</pre><p>Find the installation directory (based on where you installed it above; see class slides for background). 
+					Take a look in the <code class="code">&lt;installation-directory&gt;/spring-xd-&lt;version&gt;.RELEASE/xd/logs</code>
+						  directory.  You should find a <code class="code">singlenode-xxxx.log</code> log file there.  If you don't, verify
+						  that you set the <code class="code">XD_HOME</code> environment variable, and check the directory permissions.
+						  Examine the log file, noting the locations of the configuration files.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="installation-lab-shell"></a>13.2.4.2.&nbsp;Connecting to the Server</h4></div></div></div><div class="orderedlist"><ol type="1" compact><li><p>Let's start up the Spring XD shell client now.  Open a separate command prompt, and change to
+						  the <code class="code">&lt;installation-directory&gt;/spring-xd-&lt;version&gt;.RELEASE/shell/bin</code> directory,
+						  and launch the <code class="code">xd-shell</code> client.  You should again see the Spring XD ASCII-art logo,
+						  and the server you connected to.</p><pre class="programlisting">$XD_HOME/../shell/bin&gt;xd-shell
+ _____                           __   _______
+/  ___|          (-)             \ \ / /  _  \
+\ `--. _ __  _ __ _ _ __   __ _   \ V /| | | |
+ `--. \ '_ \| '__| | '_ \ / _` |  / ^ \| | | |
+/\__/ / |_) | |  | | | | | (_| | / / \ \ |/ /
+\____/| .__/|_|  |_|_| |_|\__, | \/   \/___/
+      | |                  __/ |
+      |_|                 |___/
+eXtreme Data
+1.2.1.RELEASE | Admin Server Target: http://localhost:9393
+Welcome to the Spring XD shell. For assistance hit TAB or type "help".
+xd:&gt;</pre></li><li><p>From within the XD command shell, examine the list of commands available by typing <code class="code">help</code> at the prompt.  Note that the shell
+						offers tab-complete, so you can start to type a command and then hit &lt;tab&gt; to see a list of
+						options.  Try a couple simple commands, such as <code class="code">admin config info</code>, <code class="code">version</code>, and
+						<code class="code">stream list</code>.  What port, by default, does the single-node instance listen on?</p><pre class="programlisting">xd:&gt;admin config info
+  -------------  -------------------------------------------
+  Result         Successfully targeted http://localhost:9393
+  Target         http://localhost:9393
+  Timezone used  Central European Time (UTC 1:00)
+  -------------  -------------------------------------------
+
+xd:&gt;version
+1.2.1.RELEASE
+xd:&gt;stream list
+  Stream Name  Stream Definition  Status
+  -----------  -----------------  ------
+
+xd:&gt;</pre></li><li><p>Once you are finished, type <code class="code">exit</code> to leave the Spring XD shell.</p></li></ol></div></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="xd-introduction-to-streams"></a>13.3.&nbsp;Introduction to Streams (PART 2)</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="introduction-to-streams-lab-simple-time-logger"></a>13.3.1.&nbsp;A Simple Time Logger</h3></div></div></div><p>Create, deploy and run simple streams and jobs without specific coding. Let's begin by creating a very simple time logger stream.</p><div class="orderedlist"><ol type="1" compact><li><p>Go back to the Spring XD shell that is connected to your running server.  If you get stuck at
+					  any time, remember that you can enter <code class="code">help</code>, or hit &lt;tab&gt; in the shell 
+					  for autocomplete.</p></li><li><p>Create a stream consisting of a time source connected directly to a log sink.
+					  Don't forget to give your stream a name.  Verify the stream was created by
+					  running the <code class="code">stream list</code> command.  Note the status of the stream.</p></li><li><p>Make sure that you can see the Spring XD server output in the background, and
+					  go ahead and deploy your stream.  You should observe the time logging in the server
+					  window.  What is the default frequency of the time source?</p><p>Run the <code class="code">stream list</code> command again.  What is the status of the stream now?</p></li><li><p>Undeploy and delete the stream by executing the <code class="code">stream destroy</code> command.
+					  Once again, verify the stream is gone by checking the status.</p></li><li><p>Now, let's demonstrate how to pass in options to the the modules.  Create a new
+					  stream with the time source and log sink, but this time change the interval from
+					  1 second to 10 seconds.  If you don't remember how to do this, go back to the
+					  slide notes to check, or check the sources documentation found at
+					  <a href="http://docs.spring.io/spring-xd/docs/current/reference/html/#time" target="_top">
+					  http://docs.spring.io/spring-xd/docs/current/reference/html/#time</a>.  
+					  Deploy and test your new stream, verifying that it logs every 10 seconds now.
+					  When you are finished you can destroy it.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="introduction-to-streams-lab-using-processors"></a>13.3.2.&nbsp;Using Processors</h3></div></div></div><p>Now that you are familiar with deploying a simple stream, and specifying options for 
+        	  the stream modules, let's add some processing to a stream.  This time we will use an
+        	  HTTP source that will receive a JSON order summary payload, and filter out orders
+        	  without a country code of "US".  All orders with a "US" countryCode will get written to
+        	  a file.</p><div class="orderedlist"><ol type="1" compact><li><p>From the Spring XD shell, create and deploy a stream with an HTTP source, a filter Spring
+					  Expression Language (SpEL) processor, and a file sink.  You will use the jsonPath
+					  SpEL method to extract the <code class="code">countryCode</code> field, and discard any order payloads 
+					  that do not have a country code of US.</p><p>The HTTP source should listen on port 9090.</p><p>To specify an SpEL on a filter processor, use the <code class="code">--expression</code> option.
+					  The payload of the HTTP post is represented by the <code class="code">payload</code> variable.
+					  So the format of the processor module you need to create will be:</p><pre class="programlisting">filter --expression=#jsonPath(payload,'$.countryCode').equals('US')</pre><p>Change the directory of the output file to a temporary location (eg. /tmp), and be sure to 
+					  append orders to the file.  Refer to the online documentation for the file sink found here:
+					  <a href="http://docs.spring.io/spring-xd/docs/current/reference/html/#file-sink" target="_top">http://docs.spring.io/spring-xd/docs/current/reference/html/#file-sink</a></p></li><li><p>The Spring XD shell includes a utility that will post an HTTP payload to a URL.  You can use
+					  the following example to post some sample orders to your stream for testing:</p><pre class="programlisting">http post --target http://localhost:9090 \
+     --data "{\"id\":\"2773\",\"countryCode\":\"US\",\"orderAmt\":\"100\"}"</pre><p>Post several order payloads, changing the order number and alternating between US and non-US 
+					  country codes.</p><p>Examine the contents of the output file created in the temporary directory.  What is the
+					  name of the file that was created?  You should only see orders with US country codes
+					  in the file, if your stream is functioning correctly.</p><p>If you have time, feel free to experiment with some of the different options for
+					  the modules.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="introduction-to-streams-lab-solutions"></a>13.3.3.&nbsp;Solutions</h3></div></div></div><div class="orderedlist"><ol type="1" compact><li><p>Simple Time Logger - Spring XD shell input:</p><pre class="programlisting">xd:&gt;stream create --definition "time | log" --name timer
+Created new stream 'timer'
+xd:&gt;stream list
+  Stream Name  Stream Definition  Status
+  -----------  -----------------  ----------
+  timer        time | log         undeployed
+
+xd:&gt;stream deploy --name timer 
+Deployed stream 'timer'
+xd:&gt;stream list
+  Stream Name  Stream Definition  Status
+  -----------  -----------------  --------
+  timer        time | log         deployed
+
+xd:&gt;stream undeploy --name timer
+Un-deployed stream 'timer'
+xd:&gt;stream list
+  Stream Name  Stream Definition  Status
+  -----------  -----------------  ----------
+  timer        time | log         undeployed
+
+xd:&gt;stream destroy timer
+Destroyed stream 'timer'</pre><pre class="programlisting">xd:&gt;stream create --definition "time --fixedDelay=10 | log" --name timer --deploy
+Created and deployed new stream 'timer'
+xd:&gt;stream destroy timer
+Destroyed stream 'timer'
+xd:&gt;</pre><p>Simple Time Logger - Spring XD server log output:</p><pre class="programlisting">2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Path cache event: path=/containers/e29d58eb-55e9-438d-8357-93f4cc83c4e1, type=CHILD_ADDED
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: type=INITIALIZED
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Container arrived: Container{name='e29d58eb-55e9-438d-8357-93f4cc83c4e1', attributes={ip=10.0.1.6, host=acogoluegnes-xps, groups=, pid=7249, id=e29d58eb-55e9-438d-8357-93f4cc83c4e1}}
+2015-08-17T10:22:46+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ContainerListener - Scheduling deployments to new container(s) in 15000 ms 
+2015-08-17T10:35:06+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.sink.log.1, type=CHILD_ADDED
+2015-08-17T10:35:06+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module 'log' for stream 'timer'
+2015-08-17T10:35:06+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module [ModuleDescriptor@6c76c5bd moduleName = 'log', moduleLabel = 'log', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 1, type = sink, parameters = map[[empty]], children = list[[empty]]]
+2015-08-17T10:35:07+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.source.time.1, type=CHILD_ADDED
+2015-08-17T10:35:07+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module 'time' for stream 'timer'
+2015-08-17T10:35:07+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module [ModuleDescriptor@34e40bc moduleName = 'time', moduleLabel = 'time', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 0, type = source, parameters = map[[empty]], children = list[[empty]]]
+2015-08-17T10:35:07+0200 1.2.1.RELEASE INFO task-scheduler-1 sink.timer - 2015-08-17 10:35:07
+2015-08-17T10:35:07+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ZKStreamDeploymentHandler - Deployment status for stream 'timer': DeploymentStatus{state=deployed}
+2015-08-17T10:35:08+0200 1.2.1.RELEASE INFO task-scheduler-1 sink.timer - 2015-08-17 10:35:08
+2015-08-17T10:35:09+0200 1.2.1.RELEASE INFO task-scheduler-2 sink.timer - 2015-08-17 10:35:09
+2015-08-17T10:35:10+0200 1.2.1.RELEASE INFO task-scheduler-1 sink.timer - 2015-08-17 10:35:10
+.
+.
+.
+2015-08-17T10:35:31+0200 1.2.1.RELEASE INFO task-scheduler-10 sink.timer - 2015-08-17 10:35:31
+2015-08-17T10:35:32+0200 1.2.1.RELEASE INFO main-EventThread container.DeploymentListener - Undeploying module [ModuleDescriptor@34e40bc moduleName = 'time', moduleLabel = 'time', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 0, type = source, parameters = map[[empty]], children = list[[empty]]]
+2015-08-17T10:35:32+0200 1.2.1.RELEASE INFO main-EventThread container.DeploymentListener - Undeploying module [ModuleDescriptor@6c76c5bd moduleName = 'log', moduleLabel = 'log', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 1, type = sink, parameters = map[[empty]], children = list[[empty]]]
+2015-08-17T10:35:32+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.source.time.1, type=CHILD_REMOVED
+2015-08-17T10:35:32+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.sink.log.1, type=CHILD_REMOVED</pre><pre class="programlisting">2015-08-17T10:36:48+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.sink.log.1, type=CHILD_ADDED
+2015-08-17T10:36:48+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module 'log' for stream 'timer'
+2015-08-17T10:36:48+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module [ModuleDescriptor@78fb8624 moduleName = 'log', moduleLabel = 'log', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 1, type = sink, parameters = map[[empty]], children = list[[empty]]]
+2015-08-17T10:36:49+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.source.time.1, type=CHILD_ADDED
+2015-08-17T10:36:49+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module 'time' for stream 'timer'
+2015-08-17T10:36:49+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Deploying module [ModuleDescriptor@47d24651 moduleName = 'time', moduleLabel = 'time', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 0, type = source, parameters = map['fixedDelay' -&gt; '10'], children = list[[empty]]]
+2015-08-17T10:36:49+0200 1.2.1.RELEASE INFO task-scheduler-5 sink.timer - 2015-08-17 10:36:49
+2015-08-17T10:36:49+0200 1.2.1.RELEASE INFO DeploymentSupervisor-0 zk.ZKStreamDeploymentHandler - Deployment status for stream 'timer': DeploymentStatus{state=deployed}
+2015-08-17T10:36:59+0200 1.2.1.RELEASE INFO task-scheduler-9 sink.timer - 2015-08-17 10:36:59
+2015-08-17T10:37:09+0200 1.2.1.RELEASE INFO task-scheduler-9 sink.timer - 2015-08-17 10:37:09
+2015-08-17T10:37:19+0200 1.2.1.RELEASE INFO task-scheduler-9 sink.timer - 2015-08-17 10:37:19
+.
+.
+.
+2015-08-17T10:39:29+0200 1.2.1.RELEASE INFO task-scheduler-4 sink.timer - 2015-08-17 10:39:29
+2015-08-17T10:39:31+0200 1.2.1.RELEASE INFO main-EventThread container.DeploymentListener - Undeploying module [ModuleDescriptor@47d24651 moduleName = 'time', moduleLabel = 'time', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 0, type = source, parameters = map['fixedDelay' -&gt; '10'], children = list[[empty]]]
+2015-08-17T10:39:31+0200 1.2.1.RELEASE INFO main-EventThread container.DeploymentListener - Undeploying module [ModuleDescriptor@78fb8624 moduleName = 'log', moduleLabel = 'log', group = 'timer', sourceChannelName = [null], sinkChannelName = [null], index = 1, type = sink, parameters = map[[empty]], children = list[[empty]]]
+2015-08-17T10:39:31+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.source.time.1, type=CHILD_REMOVED
+2015-08-17T10:39:31+0200 1.2.1.RELEASE INFO DeploymentsPathChildrenCache-0 container.DeploymentListener - Path cache event: path=/deployments/modules/allocated/e29d58eb-55e9-438d-8357-93f4cc83c4e1/timer.sink.log.1, type=CHILD_REMOVED</pre></li><li><p>Using Processors - Spring XD shell input:</p><pre class="programlisting">xd:&gt;stream create --name orderFilter --definition "http --port=9090 | 
+filter --expression=#jsonPath(payload,'$.countryCode').equals('US') |
+file --dir=/tmp --mode=APPEND" --deploy
+Created and deployed new stream 'orderFilter'
+xd:&gt;http post --target http://localhost:9090 --data "{\"id\":\"2773\",\"countryCode\":\"US\",\"orderAmt\":\"100\"}"
+&gt; POST (text/plain;Charset=UTF-8) http://localhost:9090 {"id":"2773","countryCode":"US","orderAmt":"100"}
+&gt; 200 OK
+
+xd:&gt;http post --target http://localhost:9090 --data "{\"id\":\"2774\",\"countryCode\":\"CA\",\"orderAmt\":\"125\"}"
+&gt; POST (text/plain;Charset=UTF-8) http://localhost:9090 {"id":"2774","countryCode":"CA","orderAmt":"125"}
+&gt; 200 OK
+
+xd:&gt;http post --target http://localhost:9090 --data "{\"id\":\"2775\",\"countryCode\":\"US\",\"orderAmt\":\"110\"}"
+&gt; POST (text/plain;Charset=UTF-8) http://localhost:9090 {"id":"2775","countryCode":"US","orderAmt":"110"}
+&gt; 200 OK
+
+xd:&gt;</pre><p>Using Processors - Output:</p><pre class="programlisting">$ more /tmp/orderFilter.out 
+{"id":"2773","countryCode":"US"}
+{"id":"2775","countryCode":"US"}
+$</pre></li></ol></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="xd-introduction-to-jobs"></a>13.4.&nbsp;Introduction to Jobs (PART 3)</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="introduction-to-jobs-basic"></a>13.4.1.&nbsp;Installing and Running a Basic Batch Job</h3></div></div></div><p>This simple example demonstrate how a Spring XD job can read a txt file, replace the pipes with commas, and output
+			  the result into a new file.</p><div class="orderedlist"><ol type="1" compact><li><p>Before installing the custom module, let's modify the location of the custom module registry.
+						Create a subdirectory in your user home directory called <code class="code">xd-custom-modules</code>.
+						Open the Spring XD <code class="code">servers.yml</code> file (located within <code class="code">XD_HOME/config</code>),
+						and set the <code class="code">xd.customModule.home</code> property
+						to the location of the new directory.
+					</p><p>Restart the Spring-XD server to pick up the changes.</p></li><li><p>Now, examine the contents of the <code class="code">xd-intro-jobs/dining-requests-in.txt</code> file - note it contains pipe-delimited lines of text.
+					Copy the file from the course labs directory, into your home directory <code class="code">$HOME</code>.</p></li><li><p>Open the <code class="code">xd-intro-jobs/xd-job-basic.xml</code> file and find the <code class="code">itemReader</code> bean.
+					  Change the value of the <code class="code">resource</code> property to point to the <code class="code">dining-requests-in.txt</code> file
+					  that you just copied into your home directory.</p><pre class="programlisting">...
+	&lt;bean id="itemReader" class="org.springframework.batch.item.file.FlatFileItemReader"&gt;
+		&lt;property name="resource" value="file:$HOME/dining-requests-in.txt" /&gt;
+		&lt;property name="lineMapper" ref="lineMapper" /&gt;
+	&lt;/bean&gt;
+...
+</pre><p>Find the <code class="code">itemWriter</code> bean, and change the <code class="code">resource</code> output file location to
+					  your home directory (leaving the filename the same).</p><pre class="programlisting">...
+	&lt;bean id="itemWriter" class="org.springframework.batch.item.file.FlatFileItemWriter"&gt;
+		&lt;property name="resource" value="file:$HOME/dining-requests-1-out.csv" /&gt;
+		&lt;property name="lineAggregator" ref="lineAggregator" /&gt;
+	&lt;/bean&gt;
+...</pre></li><li><p>Use the following procedure to upload the module. Note that if this were a JAR file, the <code class="code">module upload</code> command could be used.</p><div class="orderedlist"><ol type="a" compact><li><p>Under the <code class="code">xd.customModule.home</code> directory, create the <code class="code">job/xd-job-basic/config</code> subdirectories.</p></li><li><p>Copy the <code class="code">xd-intro-jobs/xd-job-basic.xml</code> file from the course labs installation directory, to the
+							  <code class="code">&lt;xd.customModule.home&gt;/job/xd-job-basic/config</code> directory.</p></li></ol></div></li><li><p>From the Spring XD shell, run the <code class="code">module list</code> command and verify the module appears in the list of Job modules.</p></li><li><p>From the XD shell, create a new Spring XD batch job using the <code class="code">job create</code> command.</p><pre class="programlisting">xd:&gt;job create --name myBatchJob --definition "xd-job-basic" --deploy
+Successfully created and deployed job 'myBatchJob'
+xd:&gt;</pre></li><li><p>Launch the job, using the <code class="code">job launch</code> command.</p><pre class="programlisting">xd:&gt;job launch myBatchJob
+Successfully submitted launch request for job 'myBatchJob'
+xd:&gt;</pre></li><li><p>Verify the job completed successfully.</p><p>Open the admin UI (<a href="http://localhost:9393/admin-ui/" target="_top">http://localhost:9393/admin-ui/</a>), navigate to the Job Executions page, and verify the status of the job is "COMPLETED".
+					  Click on the "Details" icon (magnifying glass) of your job and examine the information shown such as the duration and steps.
+					  Feel free to check out other areas such as the Modules, Definitions, and Deployments tabs.</p><p>Navigate to your <code class="code">$HOME</code> directory, and examine the contents of the <code class="code">dining-requests-1-out.csv</code> file.
+					  You should see that the pipes have been replaced with commas.</p></li></ol></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="batch-admin-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="amqp-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;12.&nbsp;batch-admin: Spring Batch Admin&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;14.&nbsp;amqp: Simplifying Messaging with Spring's AMQP Support</td></tr></table></div></body></html>

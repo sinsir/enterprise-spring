@@ -1,0 +1,178 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;7.&nbsp;si-intro: Refactoring from JMS to Spring Integration</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="tx-xa-lab.html" title="Chapter&nbsp;6.&nbsp;tx-xa: Using Global JTA Transactions"><link rel="next" href="si-configuration-lab.html" title="Chapter&nbsp;8.&nbsp;si-configuration: Using an Idempotent Receiver and Filter invalid Dinings"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="si-intro-lab"></a>Chapter&nbsp;7.&nbsp;si-intro: Refactoring from JMS to Spring Integration</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="si-intro-introduction"></a>7.1.&nbsp;Introduction</h2></div></div></div><p>
+		In this lab you will learn how to set up a basic messaging application using Spring Integration. We
+		will start off with a use case fully implemented using JMS (based on the <code class="literal">jms</code> lab) and refactor it
+		into a Spring Integration based solution. 
+	</p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>How to define basic Spring Integration components using the spring-integration namespace</p></li><li><p>How to use Gateways and Adapters to decouple invoking logic from Spring Integration</p></li><li><p>How to use a Service Activator to decouple invoked business code from Spring Integration</p></li><li><p>How to run a Spring Integration application from a JUnit test</p></li><li><p>How to visualize a Spring Integration flow with STS</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Spring Integration Channels</p></li><li><p>Spring Integration Gateway</p></li><li><p>Spring Integration Service Activator</p></li><li><p>Spring Integration Adapters</p></li><li><p>Spring Integration Editor</p></li></ol></div><p>
+		Estimated time to complete: 45 minutes
+	</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="si-intro-quick-instructions"></a>7.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, follow the TODOs listed in 
+    the <code class="literal">Tasks</code> view in Eclipse/STS.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="si-intro-instructions"></a>7.3.&nbsp;Instructions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3634"></a>7.3.1.&nbsp;Inspect the current application</h3></div></div></div><p>
+			(TODO 01) The start of this lab is basically the solution of the <code class="literal">jms</code> lab: we have a JMS-based
+			<code class="interfacename">DiningProcessor</code> that sends <code class="classname">Dining</code>
+			messages to the server, which then uses a message listener to send the payload to the
+			<code class="varname">rewardNetwork</code>. The resulting <code class="classname">RewardConfirmation</code> is
+			then placed on another queue, from where it's picked up by the client using another message
+			listener which passes the payload to a <code class="classname">RewardConfirmationLogger</code>.
+		</p><p>
+			Check out the code and configuration to make sure you understand it, and then run the
+			<code class="classname">DiningProcessorTests</code> to verify that it passes. 
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3662"></a>7.3.2.&nbsp;Refactor to Spring Integration</h3></div></div></div><p>
+			(TODO 02) You're going to replace the server side's JMS configuration with Spring Integration, to make
+			it easier to add aditional processing components to the incoming message flow. First look at
+			<code class="filename">jms-rewards-config.xml</code> to see what the current application does: it
+			delegates straight to the <code class="varname">rewardNetwork</code> using a message listener.
+		</p><p>
+			Now open up <code class="filename">spring-integration-rewards-config.xml</code>. Notice that it uses
+			the <code class="literal">integration</code> namespace as the default. This makes it easier to add
+			Spring Integration components, but you'll need to prefix regular bean definitions with
+			"<code class="literal">beans:</code>". It also defines the Spring Integration jms and mail namespaces.
+		</p><p>
+			Add a <code class="literal">&lt;int-jms:inbound-gateway&gt;</code> element that will replace the message
+			listener defined in the previous file. Add a <code class="literal">request-destination-name</code> and
+			<code class="literal">default-reply-queue-name</code> attribute with the names of the request and
+			response queues. Also add a <code class="literal">request-channel</code> attribute that you set to
+			<code class="literal">dinings</code>.
+		</p><p>
+			(TODO 03) Define a simple direct channel called
+			<code class="literal">dinings</code>. Note that we're not specifying a reply channel for now, so a
+			temporary one will be created automatically when a new JMS message is received.
+		</p><p>
+			(TODO 04) We need to define a &lt;service-activator /&gt; that would call
+			<code class="literal">rewardNetwork.rewardAccountFor(...)</code> when there is a message on the
+			<code class="literal">dinings</code> channel.
+			You	don't have to specify the method in this case, since the
+			<code class="interfacename">RewardNetwork</code> only has a single method. Note that we're not
+			specifying an output channel, so the resulting <code class="classname">RewardConfirmations</code> will
+			be sent back to the inbound gateway as reply messages automatically, based on the
+			<code class="literal">replyChannel</code> header of each message.
+		</p><p>
+			Compare the contents of the integration configuration file with that of the
+			<code class="filename">jms-rewards-config.xml</code>. When you've verified that you've configured the
+			right queue names, rename the <code class="filename">jms-rewards-config.xml</code> file to 
+			<code class="filename">jms-rewards-config.xml.old</code> since we shouldn't need it anymore.
+			</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+					Renaming the file removes it from use but allows you to refer to it later if you've 
+					made a mistake.  The <code class="classname">DiningProcessorTests</code> test
+					class simply loads all configuration files in the
+					<code class="literal">rewards.messaging</code> package using a special wildcard syntax
+					("classpath*:rewards/messaging/*-config.xml") and doesn't refer to the filename
+					explicitly.
+				</p></td></tr></table></div><p>
+		</p><p>
+			On the bottom of the editor for the integration configuration file, click the
+			'integration-graph' tab to see a graphical representation of what you've configured so far.
+			Note that this is not just a read-only view, but an actual editor that shows components for
+			all the namespaces that you have configured in your file. 
+		</p><p>
+			Run the <code class="classname">DiningProcessorTests</code> again, it should still pass.  From the 
+			client's point of view nothing has
+			changed. However, it has now become much easier to make changes and add new components to the
+			application when new JMS messages arrive!
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3751"></a>7.3.3.&nbsp;Log incoming Dining messages using a wire tap</h3></div></div></div><p>
+			(TODO 05) Now that that Spring Integration is in place, we're going to add some
+			logging. As seen in the slides, it is possible to log information using a <code class="literal">wire
+			tap</code>. Based on the example shown in the slides, complete <code class="literal">TODO 05</code>
+			and <code class="literal">TODO 06</code>. Messages should be logged in full
+			(not just the payload). 
+		</p><p>
+			Run the test again and check that you're seeing the output of the
+			<code class="classname">LoggingHandler</code> appearing in the Console. Note the
+			<code class="varname">replyChannel</code> and JMS-related headers that were added automatically.
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3773"></a>7.3.4.&nbsp;Send emails for confirmations</h3></div></div></div><p>
+			(TODO 07) We now have a new requirement: the server should send an email whenever a reward has been processed
+			successfully. Luckily we're already using Spring Integration, so adding this functionality to
+			the application is easy!
+		</p><p>
+			First define a new <code class="literal">&lt;publish-subscribe-channel&gt;</code> called
+			<code class="varname">confirmations</code>. Make sure to update the inbound
+			gateway and the service activator to use it as their <code class="literal">reply-channel</code> and
+			<code class="literal">output-channel</code>, respectively. Run the test again to make sure you didn't
+			break anything.
+		</p><p>
+			(TODO 08) Now that you're using a pub sub channel it's easy to add aditional endpoints. First, define
+			a new Spring bean of type <code class="classname">rewards.RewardMailMessageCreator</code> and name it
+			<code class="literal">rewardMailMessageCreator</code>. Note that you'll
+			have to prefix the tag with <code class="literal">beans:</code>. 
+			Add a <code class="literal">&lt;constructor-arg&gt;</code> that references the
+			<code class="literal">accountRepository</code> bean. Have a look at the class's implementation to see
+			how it creates mail messages based on a <code class="classname">RewardConfirmation</code>.
+		</p><p>
+			(TODO 09) Then add another <code class="literal">&lt;service-activator&gt;</code> that passes messages from the
+			<code class="varname">confirmations</code> channel to your new bean and puts the output on a channel
+			called <code class="literal">mails</code>: make sure to also add a channel definition for that. 
+		</p><p>
+			(TODO 10) To actually send the email, finally define a
+			<code class="literal">&lt;int-mail:outbound-channel-adapter&gt;</code> element that send messages from
+			the <code class="literal">mails</code> channel to <code class="literal">localhost</code> as the mail host. 
+			That's it: your application is now sending emails for every
+			<code class="classname">RewardConfirmation</code> that's generated by the
+			<code class="literal">rewardNetwork</code>!
+			</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Warning"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Warning]" src="images/warning.png"></td><th align="left">Warning</th></tr><tr><td align="left" valign="top"><p>
+					The adapter will use the default SMTP port 25 by default to talk to a server you'll see
+					in the next step: if you're running a local mail server on that port already then this
+					won't work. In that case, please specify a non-default port number that doesn't conflict
+					with things already running on your machine, like 2525, using the <code class="literal">port</code>
+					property.
+				</p></td></tr></table></div><p>
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3847"></a>7.3.5.&nbsp;Test the mail sending</h3></div></div></div><p>
+			To actually test the email sending we're going to use a local embedded mail server that's just
+			for testing purposes: have a look at the <code class="filename">rewards/mail-server-config.xml</code>
+			file under <code class="filename">src/test/resources</code> to see how that test server is defined.
+			When you used a non-default port number in the previous step, then please add a
+			<code class="literal">&lt;property name="port" value="2525"/&gt;</code> to the mail server bean using the
+			same port number!
+		</p><p>
+			(TODO 11) Now switch back to the test and add <code class="filename">/rewards/mail-server-config.xml</code> to
+			the list of files configured in the <code class="interfacename">@SpringApplicationConfiguration</code>
+			annotation.
+		</p><p>
+			(TODO 12) Then add an @Autowired field of type <code class="classname">Wiser</code>
+			(the class defined in the configuration file).  In the test method, verify that 5 emails 
+			have been received after sending the dinings and that the
+			email address of the receiver of the first message is 'keith@example.com' (this mail address
+			is called the 'envelope receiver' in Wiser, just use code assist in Eclipse to find the
+			property). 
+		</p><p>
+			When your updated test passes, you've succesfully completed the lab! If you have some time
+			left, you can continue with the bonus steps.
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3876"></a>7.3.6.&nbsp;BONUS STEP 1: Refactor the client as well</h3></div></div></div><p>
+			The <code class="literal">DiningProcessor</code> used by the test is still implemented using plain
+			Spring JMS, with a <code class="classname">JmsTemplate</code> and a message listener. Refactor this solution
+			to also use Spring Integration instead by updating the <code class="filename">client-config.xml</code>. 
+			We won't spell out the detailed steps this time, but this is what you'll need:
+			</p><div class="orderedlist"><ol type="1"><li><p>
+						A regular gateway for the <code class="interfacename">DiningProcessor</code> interface (you
+						can remove the <code class="classname">JmsDiningProcessor class</code>)
+					</p></li><li><p>A JMS outbound gateway to send the dinings and receive the confirmations</p></li><li><p>
+						A service activator or outbound channel adapter to invoke the
+						<code class="methodname">log</code> method of the <code class="literal">confirmationLogger</code>
+					</p></li></ol></div><p>
+			</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+					Make sure to use unique channel names, since the client and server are running as a single
+					application in the test!
+				</p></td></tr></table></div><p>
+			</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+					When you're using a JMS outbound gateway, it will add a JMSReplyTo header to your JMS
+					message (you can verify this by looking at the logging channel adapter's output). That
+					means that you can remove the <code class="literal">default-reply-queue-name</code> attribute on the
+					JMS <span class="emphasis"><em>inbound</em></span> gateway in the server-side config file, since Spring will
+					automatically send the confirmation reply message to the right queue now!
+				</p></td></tr></table></div><p>
+		</p><p>
+			When you're done, the test should still pass unchanged. 
+		</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3929"></a>7.3.7.&nbsp;BONUS STEP 2: Simplify the Spring Integration configuration</h3></div></div></div><p>
+			Open the <code class="filename">spring-integration-rewards-config.xml</code> file again. Notice that
+			the <code class="literal">mails</code> channel is only coupling the service activator to the outbound
+			gateway. If that's the case, there's a shortcut to define the channel implicitly: delete the
+			channel definition and update the mail adapter to have <code class="literal">id="mails"</code> now
+			instead of <code class="literal">channel="mails"</code>. This will automatically define a direct channel
+			with the name of the adapter's id that will act as its input channel. 
+		</p><p>
+			If you did the first bonus step, you can make similar changes in your client's config file.
+			The <code class="literal">request-channel</code> of the JMS outbound gateway will be defined
+			automatically, so you don't need an explicit channel definition for it, and if you give your
+			outbound channel adapter an id with the name of the <code class="literal">reply-channel</code>
+			configured in the outbound gateway you can remove the channel definition for those
+			confirmations as well. 
+		</p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tx-xa-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="si-configuration-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;6.&nbsp;tx-xa: Using Global JTA Transactions&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;8.&nbsp;si-configuration: Using an Idempotent Receiver and Filter invalid Dinings</td></tr></table></div></body></html>

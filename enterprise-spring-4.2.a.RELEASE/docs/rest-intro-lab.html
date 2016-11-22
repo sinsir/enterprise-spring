@@ -1,0 +1,307 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;3.&nbsp;rest-intro: Introduction to RESTful Applications with Spring</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="tasks-lab.html" title="Chapter&nbsp;2.&nbsp;tasks: Tasks and Scheduling"><link rel="next" href="jms-lab.html" title="Chapter&nbsp;4.&nbsp;jms: Simplifying Messaging with Spring's JMS Support"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="rest-intro-lab"></a>Chapter&nbsp;3.&nbsp;rest-intro: Introduction to RESTful Applications with Spring</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rest-intro-lab-introduction"></a>3.1.&nbsp;Introduction</h2></div></div></div><p>In this lab you will gain experience with using Spring 3.0's new
+    REST support to build a RESTful application and a client that uses the
+    <span class="emphasis"><em>RestTemplate</em></span> to access the application.</p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>Routing HTTP Requests to controller methods</p></li><li><p>Extracting data from requests and populating response
+        bodies</p></li><li><p>Using HTTP Return codes and headers to communicate the result of
+        an HTTP operation</p></li><li><p>Consuming RESTful resources</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Using <span class="emphasis"><em>@RequestMapping</em></span> and
+        <span class="emphasis"><em>@ExceptionHandler</em></span> for controller method
+        routing</p></li><li><p>using URI Templates and
+        <span class="emphasis"><em>HttpMessageConverters</em></span> with
+        <span class="emphasis"><em>@Request-</em></span> and
+        <span class="emphasis"><em>@ResponseBody</em></span></p></li><li><p>using the <span class="emphasis"><em>RestTemplate</em></span></p></li></ol></div><p>Estimated time to complete: 45 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rest-intro-lab-quick-instructions"></a>3.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions</p><div class="orderedlist"><ol type="1"><li><p><span class="bold"><strong>Annotate the method with @RequestMapping,
+        configured to be invoked for POSTs to /dining/{txId} (TODO
+        01)</strong></span> (<a href="">details</a>)</p><p>Annotate the reward method of the DiningController class with
+        @RequestMapping. This annotation takes two attributes: set value to
+        the URI Template for this method, which is "/dining/{txId}", and set
+        method to RequestMethod.POST to indicate that this method should only
+        be used for POST requests.</p></li><li><p><span class="bold"><strong>Annotate the diningRequest param with
+        @RequestBody and the txId param with @PathVariable (TODO
+        02)</strong></span> (<a href="">details</a>)</p><p>In the reward method, annotate the dining parameter with
+        @RequestBody and the txId parameter with @PathVariable. </p></li><li><p><span class="bold"><strong>Add the annotation-driven element from the
+        mvc namespace to auto-configure a Jaxb2RootElementHttpMessageConverter
+        (TODO 03)</strong></span> (<a href="">details</a>)</p><p>Add the annotation-driven element from the mvc namespace within
+        rest-servlet.xml file.</p></li><li><p><span class="bold"><strong>Add a Location header to the response with the absolute URI of the new reward,
+		using the UriComponentsBuilder to determine the URI based on the current request URI
+        (TODO 04)</strong></span> (<a href="">details</a>)</p><p>In the DiningController class, compute the Location header of the
+        response to the absolute URI of the newly created reward.</p></li><li><p><span class="bold"><strong>Return the appropriate ResponseEntity
+        for the creation of a resource (TODO 05)</strong></span> (<a href="">details</a>)</p><p>Create and return a <span class="emphasis"><em>ResponseEntity</em></span>
+        that sets a 201 Created status code.
+        </p></li><li><p><span class="bold"><strong>Test the Controller using a RestTemplate.
+        (TODO 06 - TODO 11)</strong></span> (<a href="">details</a>)</p><p>Open the CcpClient class. In the sendDiningRequest method,
+        implement TODO 06 by posting the diningRequest to BASE_URI +
+        "dining/{transactionId}", and assign to the location. Deploy the
+        application, and start the CcpClientTestsForServer test class. This
+        class contains two tests: they will both fail, as you haven't finished
+        the implementation of the server and the client yet. </p></li><li><p><span class="bold"><strong>Annotate with @RequestMapping to be
+        invoked for GETs to /rewards/{confirmationNumber} (TODO 07)</strong></span>
+        (<a href="">details</a>)</p><p>Open the RewardController class, and annotate the getReward
+        method with an @RequestMapping annotation that uses a URI template of
+        /rewards/{confirmationNumber} and responds to GET requests.</p></li><li><p><span class="bold"><strong>Return the mapped Reward with the given
+        confirmationNumber and annotate the method with @ResponseBody to
+        indicate that the reward should be marshalled (TODO 08)</strong></span>
+        (<a href="">details</a>)</p><p>In the getReward method, annotate the method with @ResponseBody
+        and return the found Reward object.</p></li><li><p><span class="bold"><strong>GET the URI at the returned location and
+        assign to reward (TODO 09)</strong></span> (<a href="">details</a>)</p><p>In the CcpClient class, complete TODO 09 by using the
+        RestTemplate to GET the reward from the returned location. Then run
+        the test again: this time, the processDining() test method should
+        succeed, but the processDiningTwice() will still fail.</p></li><li><p><span class="bold"><strong>Annotate DiningAlreadyProcessedException
+        with @ResponseStatus to return a 409 Conflict when thrown from a
+        controller method (TODO 10)</strong></span> (<a href="">details</a>)</p><p>Open the DiningAlreadyProcessedException and implement TODO 10
+        by annotating the exception with @ResponseStatus, configured to return
+        a 409 Conflict.</p></li><li><p><span class="bold"><strong>Annotate handleEmptyResult method in the
+        RewardController with @ExceptionHandler to let this method be invoked
+        when an EmptyResultDataAccessException occurs and @ResponseStatus to
+        return a 404 Not Found (TODO 11)</strong></span> (<a href="">details</a>)</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rest-intro-lab-instructions"></a>3.3.&nbsp;Instructions</h2></div></div></div><p>The instructions for this lab are organized into sections. In the
+    first section, you'll complete the steps required to issue a POST request
+    containing a <span class="emphasis"><em>&lt;dining&gt;</em></span> element that will result
+    in a new reward being created. In the second section, you'll add support
+    for issuing a GET request to obtain an XML representation of the
+    reward.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e1629"></a>3.3.1.&nbsp;Use Case</h3></div></div></div><p>Before we start with writing the lab code, we'll first provide you
+      with a bit of context. The Reward Network organization has decided it
+      wants to offer a RESTful API for its clients to send in new dining
+      requests that lead to the creation of a reward. Because HTTP does not
+      offer guaranteed delivery, clients will provide a unique transaction id
+      whenever they send in a dining, and the server will store this id with
+      the resulting reward. This way, a client can simply re-attempt to send a
+      dining if it isn't sure if processing was successful by using the same
+      transaction id. Clients should also be able to see created rewards. To
+      send a new dining to the reward network, a client will POST an XML
+      representation to the following URI:
+      <span class="emphasis"><em>BASE-URI/dining/{transactionId}</em></span>, where
+      <span class="emphasis"><em>BASE-URI</em></span> would be something like
+      <span class="emphasis"><em>http://reward-network.com/rest</em></span>. In our lab it will
+      simply be
+      <span class="emphasis"><em>http://localhost:8080/rest-intro/rest</em></span>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e1646"></a>3.3.2.&nbsp;Inspecting the Existing Application Configuration</h3></div></div></div><p>The server-side application has already been started. Let's have a
+      look!</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1651"></a>3.3.2.1.&nbsp;Step 1: Inspect <span class="emphasis"><em>web.xml</em></span></h4></div></div></div><p>First, open the <span class="emphasis"><em>web.xml</em></span> file (under
+        <span class="emphasis"><em>src/main/webapp/WEB-INF</em></span>). The middle tier of the
+        application is bootstrapped by the
+        <span class="emphasis"><em>ContextLoaderListener</em></span>, which uses the
+        <span class="emphasis"><em>system-test-config.xml</em></span> file that's defined in the
+        <span class="emphasis"><em>rewards</em></span> project in the
+        <span class="emphasis"><em>00-reward-network</em></span> Working Set. This simply
+        creates the <span class="emphasis"><em>RewardNetwork</em></span> bean and all the
+        necessary infrastructure. The REST tier is based on Spring MVC, so
+        that's bootstrapped in a different
+        <span class="emphasis"><em>WebApplicationContext</em></span> created by the
+        <span class="emphasis"><em>DispatcherServlet</em></span>. This uses a default location
+        for its configuration file, which is
+        <span class="emphasis"><em>/WEB-INF/&lt;servlet-name&gt;-servlet.xml</em></span>. That
+        means the <span class="emphasis"><em>rest-servlet.xml</em></span> file will contain all
+        the necessary beans for our MVC-based REST tier.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1691"></a>3.3.2.2.&nbsp;Step 2: Inspect <span class="emphasis"><em>rest-servlet.xml</em></span></h4></div></div></div><p>Open the <span class="emphasis"><em>rest-servlet.xml</em></span> file. Notice that
+        it enables component-scanning for all classes under the
+        <span class="emphasis"><em>rewards.rest</em></span> package (incl. any subpackages).
+        This means that classes that are annotated with
+        <span class="emphasis"><em>@Component</em></span> or one of Spring's stereotype
+        annotations like <span class="emphasis"><em>@Controller</em></span> will automatically
+        result in a bean definition. For controllers, this is a very
+        convenient way to work that saves you from having to write a lot of
+        straightforward XML configuration. You also see a
+        <span class="emphasis"><em>TODO</em></span> tag: we'll get to that in a moment.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1713"></a>3.3.2.3.&nbsp;Handling the first request</h4></div></div></div><p>Now that you understand how the application is bootstrapped,
+        you'll first perform the steps required to handle the incoming POST
+        request containing the dining.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1718"></a>3.3.2.4.&nbsp;Step 3: Configure the
+        <span class="emphasis"><em>DiningController</em></span></h4></div></div></div><p>Open the <span class="emphasis"><em>DiningController</em></span> class. This class
+        will be responsible for handling POST requests to URIs like
+        <span class="emphasis"><em>/dining/1432535435</em></span> containing an XML
+        representation of a <span class="emphasis"><em>Dining</em></span> object. The number is
+        a transaction id and will be determined by the client: it serves as a
+        unique identifier for the passed-in dining, which has no unique
+        qualifiers of its own. When such a request is made, the
+        <span class="emphasis"><em>reward</em></span> method of the controller should be called.
+        First implement <span class="emphasis"><em>TODO 01</em></span> by annotating that
+        <span class="emphasis"><em>reward</em></span> method with
+        <span class="emphasis"><em>@RequestMapping</em></span>. This annotation takes two
+        attributes: set <span class="emphasis"><em>value</em></span> to the <span class="emphasis"><em>URI
+        Template</em></span> for this method, which is "/dining/{txId}". This
+        means the value of the transaction id will be available as a method
+        parameter later on. Set <span class="emphasis"><em>method</em></span> to
+        <span class="emphasis"><em>RequestMethod.POST</em></span> to indicate that this method
+        should only be used for POST requests.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: Note: Import annotation types"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note: Import annotation types</th></tr><tr><td align="left" valign="top"><p>Like always, remember to <span class="emphasis"><em>import</em></span> the
+          annotation types you're using or you'll get a compiler error! We
+          won't use the fully qualified names of all the annotations you'll
+          use in these instructions, as they are all uniquely identified by
+          just their short class names.</p></td></tr></table></div><p>Now look at the method implementation: it first uses the passed
+        in <span class="emphasis"><em>txId</em></span> to determine if a reward has already been
+        created for this transaction id and then calls the
+        <span class="emphasis"><em>RewardNetwork.rewardAccountForDining</em></span> method to
+        create a new reward. The passed in
+        <span class="emphasis"><em>rewards.oxm.Dining</em></span> object is transformed into a
+        <span class="emphasis"><em>rewards.Dining</em></span> first: like in earlier labs, we're
+        using JAXB 2 to map the XML Schema for a
+        <span class="emphasis"><em>&lt;dining&gt;</em></span> element to a class, which is this
+        <span class="emphasis"><em>rewards.oxm.Dining</em></span>. Don't confuse it with the
+        regular <span class="emphasis"><em>rewards.Dining</em></span> class that's passed as a
+        parameter to the <span class="emphasis"><em>rewardAccountFor</em></span> method.</p><p>However, there's no way for Spring to know how it needs to pass
+        in the unmarshalled dining and the transaction id as specified in the
+        URI template to the controller method. To let Spring know how to do
+        this, you'll annotate the method parameters. Implement <span class="emphasis"><em>TODO
+        02</em></span> by annotating the <span class="emphasis"><em>dining</em></span> parameter
+        with <span class="emphasis"><em>@RequestBody</em></span> and the
+        <span class="emphasis"><em>txId</em></span> parameter with
+        <span class="emphasis"><em>@PathVariable</em></span>. The first tells Spring to take to
+        contents of the HTTP request and to transform it into a
+        <span class="emphasis"><em>rewards.oxm.Dining</em></span> instance. The second tells
+        Spring to apply the URI template you specified as the value of the
+        <span class="emphasis"><em>@RequestMapping</em></span> and to extract the
+        <span class="emphasis"><em>txId</em></span> variable.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: Note: @PathVariable annotated parameters"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note: @PathVariable annotated parameters</th></tr><tr><td align="left" valign="top"><p>You don't have to name the URI template variable in this case.
+          This works because the parameter name is the same as the template
+          variable, and you're using compiler settings that add debug
+          information to the generated class files. If that's not the case,
+          you'd have to name the template variable in the annotation!</p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1823"></a>3.3.2.5.&nbsp;Step 4: Register a
+        <span class="emphasis"><em>Jaxb2RootElementHttpMessageConverter</em></span></h4></div></div></div><p>There's a catch, though: the so-called
+        <span class="emphasis"><em>HttpMessageConverters</em></span> that are registered by
+        default don't know how to unmarshal the XML from the incoming request
+        using JAXB 2. However, there's an easy way to configure a number of
+        extra converters, including one that supports JAXB2 with annotated
+        classes: use the new MVC namespace that was introduced in Spring 3.0.
+        Switch back to the <span class="emphasis"><em>rest-servlet.xml</em></span> file. Finish
+        <span class="emphasis"><em>TODO 03</em></span> by first adding the
+        <span class="emphasis"><em>mvc</em></span> namespace using the Namespaces tab, and then
+        adding the <span class="emphasis"><em>&lt;mvc:annotation-driven/&gt;</em></span>
+        element. This element causes a number of MVC-specific objects to be
+        registered, including a
+        <span class="emphasis"><em>Jaxb2RootElementHttpMessageConverter</em></span> that's
+        perfect for our purpose. This class is smart enough that it doesn't
+        need additional configuration like the marshallers from previous
+        labs.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1848"></a>3.3.2.6.&nbsp;Producing the first response</h4></div></div></div><p>Now that we can process the request, it's time to think about
+        the response. In a regular web application, we might simply send the
+        reward that was created back in the response. In a RESTful
+        application, however, a POST returns the URI of the new resource that
+        was created in the <span class="emphasis"><em>Location</em></span> header of the
+        response. A client can then GET that content at the given location.
+        The contents of the response will often just echo the request data, as
+        that's what is typically created with a POST, or be empty.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1856"></a>3.3.2.7.&nbsp;Step 5: Set the <span class="emphasis"><em>Location</em></span> header</h4></div></div></div><p>Our sample application is a bit different, as a POST to
+        <span class="emphasis"><em>/dining/txId</em></span> doesn't create a new dining: it
+        creates a new reward! We'll simply return an empty response body, but
+        it's critical that we inform the client where it can find the new
+        reward. Switch back to the <span class="emphasis"><em>DiningController</em></span> and
+        complete <span class="emphasis"><em>TODO 04</em></span> to calculate the  
+        <span class="emphasis"><em>Location</em></span> header of the response.
+        The <span class="emphasis"><em>UriComponentsBuilder</em></span> is there to help.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: Note: A note on request URIs"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note: A note on request URIs</th></tr><tr><td align="left" valign="top"><p>A request URI like
+          <span class="emphasis"><em>http://localhost:8080/rest-intro/rest/dining/1234</em></span>
+          consists of a number of elements. The <span class="emphasis"><em>path info</em></span>
+          of this request would be <span class="emphasis"><em>/dining/1234</em></span>, which
+          follows the <span class="emphasis"><em>servlet path</em></span> of
+          <span class="emphasis"><em>/rest</em></span>, which follows the <span class="emphasis"><em>context
+          path</em></span> of <span class="emphasis"><em>/rest-intro</em></span>. We want to
+          change only the path info for new requests, not the rest.</p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1905"></a>3.3.2.8.&nbsp;Step 6: Return the response with the appropriate status code</h4></div></div></div><p>If we would now use our controller, it would return a 200 OK
+        status code when the dining was processed successfully. That's not
+        what a RESTful application should do after creating a new resource in
+        response to a POST: that should return a 201 CREATED to indicate that
+        a new resource has become available, and its location is set as a
+        response header. The easiest way to specify both an header and
+        a status is to use a <span class="emphasis"><em>ResponseEntity</em></span>.
+        Complete the controller
+        implementation by implementing <span class="emphasis"><em>TODO 05</em></span> and 
+        return a <span class="emphasis"><em>ResponseEntity</em></span> created from one
+        of the <span class="emphasis"><em>ResponseEntity</em></span> factory methods.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e1922"></a>3.3.3.&nbsp;Testing the Controller using a
+      <span class="emphasis"><em>RestTemplate</em></span></h3></div></div></div><p>Before taking on the second controller, let's first test your
+      work.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1929"></a>3.3.3.1.&nbsp;Step 7: Fix the <span class="emphasis"><em>CcpClient</em></span> to call the
+        <span class="emphasis"><em>DiningController</em></span> and test the application</h4></div></div></div><p>Open the <span class="emphasis"><em>CcpClient</em></span> class. Implement
+        <span class="emphasis"><em>TODO 06</em></span> by POSTing the passed in
+        <span class="emphasis"><em>diningRequest</em></span> to the server using the
+        <span class="emphasis"><em>RestTemplate</em></span> instance field. The full URI to use
+        consists of the <span class="emphasis"><em>BASE_URI</em></span>, followed by
+        <span class="emphasis"><em>dining/</em></span> plus the
+        <span class="emphasis"><em>transactionId</em></span>. You can use URI templates in the
+        <span class="emphasis"><em>RestTemplate</em></span> just like you can on the server.
+        Assign the returned location to the given variable. The
+        <span class="emphasis"><em>RestTemplate</em></span> will automatically support object to
+        XML marshalling using JAXB2 if that's available on the classpath, you
+        don't need to configure anything for that.</p><p>Now deploy the application by dragging the project onto the
+        local Tomcat server and start the server. When the application started
+        successfully, start the <span class="emphasis"><em>CcpClientTestsForServer</em></span>
+        test class. This class contains two tests: they will both fail, as you
+        haven't finished the implementation of the server and the client yet,
+        but if you switch the Console view to show the output for the test you
+        should see the following lines in the output:</p><pre class="programlisting">
+DEBUG: org.springframework.web.client.RestTemplate - 
+       Created POST request for 
+       "http://localhost:8080/rest-intro/rest/
+             dining/4c61418d-6477-4269-880f-a381fb809cea"
+DEBUG: rewards.client.rest.CcpClient - 
+       Received location of newly created reward: 
+    http://localhost:8080/rest-intro/rest/rewards/1
+   </pre><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Tip: Switching Consoles"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip: Switching Consoles</th></tr><tr><td align="left" valign="top"><p>If you have multiple processes running, you'll only see the
+          output of one process in the Console view. If that's the Tomcat
+          process, you'll have to switch the Console to the other process:
+          click on the small arrow next to the monitor icon and choose the
+          test process.</p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="95%"><tr><td><img src="images/console-select.png" width="100%"></td></tr></table></div></td></tr></table></div><p>This tells you that the POST did indeed result in the creation
+        of a reward, with the URI
+        <span class="emphasis"><em>http://localhost:8080/rest-intro/rest/rewards/1</em></span>.
+        This is communicated to the client through the Location header of the
+        response, but performing a GET on this URI will still result in a 404
+        Not Found. That's what you'll fix next.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1987"></a>3.3.3.2.&nbsp;Handling the second request</h4></div></div></div><p>The next step is to ensure that the client can now request the
+        reward with the given URI.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1992"></a>3.3.3.3.&nbsp;Step 8: Finish the
+        <span class="emphasis"><em>RewardController.getReward</em></span> method</h4></div></div></div><p>Open the <span class="emphasis"><em>RewardController</em></span> class. This class
+        will be responsible for handling GET requests to URIs like
+        <span class="emphasis"><em>/rewards/1</em></span>. Because this is a GET, the request
+        won't have any content like the POST did. First finish <span class="emphasis"><em>TODO
+        07</em></span> by annotating the <span class="emphasis"><em>getReward</em></span> method
+        with an <span class="emphasis"><em>@RequestMapping</em></span> annotation that uses a
+        URI template of <span class="emphasis"><em>/rewards/{confirmationNumber</em></span>} and
+        responds to GET requests. Then implement <span class="emphasis"><em>TODO 08</em></span>
+        by returning the found <span class="emphasis"><em>Reward</em></span> object and
+        annotating the method with <span class="emphasis"><em>@ResponseBody</em></span>. Since
+        you already configured an appropriate
+        <span class="emphasis"><em>HttpMessageConverter</em></span> in step 4, that's all you
+        need to do! You could annotate the method with
+        <span class="emphasis"><em>@ResponseStatus</em></span>, but in this case the default
+        status code 200 OK is exactly what we want already.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2033"></a>3.3.3.4.&nbsp;Step 9: Finish the <span class="emphasis"><em>CcpClient</em></span> and run the
+        test again</h4></div></div></div><p>Finish the <span class="emphasis"><em>CcpClient</em></span> by using the
+        <span class="emphasis"><em>RestTemplate</em></span> to GET the reward from the returned
+        location (<span class="emphasis"><em>TODO 09</em></span>). Then run the test again: this
+        time, the <span class="emphasis"><em>processDining()</em></span> test method should
+        succeed, but the <span class="emphasis"><em>processDiningTwice()</em></span> will still
+        fail. Let's fix that next.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2056"></a>3.3.3.5.&nbsp;Step 10: Make the exception for duplicate dinings result in a
+        409 return code</h4></div></div></div><p>When a client sends a dining request using a transaction id that
+        has already been processed successfully, the
+        <span class="emphasis"><em>RewardController</em></span> throws a
+        <span class="emphasis"><em>DiningAlreadyProcessedException</em></span>. Currently, that
+        results in a 500 Internal Server Error code being returned. However,
+        this should indicate a client error: resubmitting dinings that have
+        already been processed is not allowed. We want to indicate this to the
+        client by sending a 409 Conflict error code instead. Fortunately, this
+        is trivial to do. Open the
+        <span class="emphasis"><em>DiningAlreadyProcessedException</em></span> and implement
+        <span class="emphasis"><em>TODO 10</em></span> by annotating the exception with
+        <span class="emphasis"><em>@ResponseStatus</em></span>, configured to return a 409
+        Conflict. Notice that this is the same annotation you used on the
+        controller method in step 6.</p><p>Now run the test again and make sure that the
+        <span class="emphasis"><em>processDiningTwice()</em></span> test method now passes as
+        well.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e2081"></a>3.3.3.6.&nbsp;Step 11: Make requests for non-existent rewards result in a 404
+        Not Found return code</h4></div></div></div><p>Open a web browser and request the url
+        [http://localhost:8080/rest-intro/rest/rewards/1]. This will return
+        the XML for the reward you created earlier. Now change the reward
+        confirmation number in that URI to some non-existent number. Notice
+        that this results in a 500 Internal Server Error again, with a stack
+        trace. This should be a 404 Not Found error. However, this time we
+        can't simply annotate the exception, as the exception that's thrown is
+        Spring's <span class="emphasis"><em>EmptyResultDataAccessException</em></span>.
+        Fortunately, Spring 3 adds another mechanism for handling exceptions
+        thrown from your controller methods. Look at the
+        <span class="emphasis"><em>handleEmptyResult</em></span> method in the
+        <span class="emphasis"><em>RewardController</em></span>: this method should be called
+        whenever an <span class="emphasis"><em>EmptyResultDataAccessException</em></span> is
+        thrown from a method in that controller while handling a request. To
+        indicate that to Spring, annotate the method with
+        <span class="emphasis"><em>@ExceptionHandler</em></span> and provide
+        <span class="emphasis"><em>EmptyResultDataAccessException.class</em></span> as the value
+        (<span class="emphasis"><em>TODO 11</em></span>). You can use the
+        <span class="emphasis"><em>@ResponseStatus</em></span> annotation again, so add another
+        annotation to the method to indicate that we want to return a 404 Not
+        Found. Since the response doesn't need a body, our method needs no
+        further implementation.</p><p>Refresh your browser and check that you now receive a 404. When
+        you see that error code, you have successfully completed the
+        lab!</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="rest-intro-lab-bonus"></a>3.3.4.&nbsp;PART 2: Out-of-container testing</h3></div></div></div><p>Estimated time to complete: 30 minutes</p><p>
+            Follow the TODOs in the code to implement an out-of-container test of our
+            REST application. This means we'll be able to test the logic of the controllers,
+            as well as the Spring MVC part (e.g. XML/JSON serialization), without deploying
+            the application in a web container. This makes the testing effort much easier and
+            faster.
+        </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tasks-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="jms-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;2.&nbsp;tasks: Tasks and Scheduling&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;4.&nbsp;jms: Simplifying Messaging with Spring's JMS Support</td></tr></table></div></body></html>

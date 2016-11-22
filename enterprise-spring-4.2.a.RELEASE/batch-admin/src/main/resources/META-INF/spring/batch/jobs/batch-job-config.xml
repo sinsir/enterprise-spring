@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- TODO 02	Notice this definition for the diningRequestJob - same as an earlier lab.
+					Notice that jobs defined within META-INF/spring/batch/jobs 
+					are automatically registered with the admin application. -->
+					
+	<import resource="classpath:app-config.xml"/>
+	<import resource="classpath:META-INF/spring/batch/common-job-config.xml"/>
+	
+	<context:mbean-export/>
+
+	<batch:job id="diningRequestsJob" incrementer="incrementer">
+		<batch:step id="diningRequestsStep">
+			<batch:tasklet start-limit="3">
+				<batch:chunk reader="diningRequestsReader"
+							 writer="reportWriter"
+							 commit-interval="10">
+					<batch:processor adapter-method="rewardAccountFor">
+						<ref bean="rewardNetwork"/>
+					</batch:processor>
+				</batch:chunk>
+			</batch:tasklet>
+		</batch:step>
+	</batch:job>
+
+	<bean id="reportWriter" class="rewards.batch.ReportWriter"/>
+
+</beans>

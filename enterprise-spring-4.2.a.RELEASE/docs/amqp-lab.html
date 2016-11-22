@@ -1,0 +1,160 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;14.&nbsp;amqp: Simplifying Messaging with Spring's AMQP Support</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="xd-intro-lab.html" title="Chapter&nbsp;13.&nbsp;Introduction to Spring XD"><link rel="next" href="remoting-lab.html" title="Chapter&nbsp;15.&nbsp;remoting: Distributing an application using RMI and Spring&#xA;  Remoting"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="amqp-lab"></a>Chapter&nbsp;14.&nbsp;amqp: Simplifying Messaging with Spring's AMQP Support</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="amqp-lab-introduction"></a>14.1.&nbsp;Introduction</h2></div></div></div><p>In an effort to improve the performance and robustness of the
+    application, the reward network team wishes to process incoming customer
+    dining events in an asynchronous fashion. Remember that the fundamental
+    use case of the reward network application is <span class="emphasis"><em>rewarding an
+    account for dining</em></span> - that won't change. The goal of this lab is
+    to decouple the process of rewarding an account from the process of
+    receiving a new dining event.</p><p>AMQP is a good fit for achieving this goal. As
+    <span class="emphasis"><em>Dining</em></span> objects arrive in the system, they will be
+    sent to an AMQP <span class="emphasis"><em>Exchange</em></span> for delivery by the broker
+	to a <span class="emphasis"><em>Queue</em></span>, where they will wait to be
+    consumed and routed through the existing
+    <span class="emphasis"><em>RewardNetwork.rewardAccountFor(Dining)</em></span> method. Recall
+    that <span class="emphasis"><em>rewardAccountFor(Dining)</em></span> returns a
+    <span class="emphasis"><em>RewardConfirmation</em></span> - this object will need to be
+    routed to its own AMQP <span class="emphasis"><em>Queue</em></span> as well, so that it
+    can be consumed by a <span class="emphasis"><em>RewardConfirmationLogger</em></span> (more
+    on this object later).</p><p>When finished, the benefit will be that any number of
+    <span class="emphasis"><em>Dining</em></span> events can arrive in the system, regardless of
+    whether the <span class="emphasis"><em>RewardNetwork</em></span> endpoint is available. When
+    the <span class="emphasis"><em>RewardNetwork</em></span> does come online, it will consume
+    however many <span class="emphasis"><em>Dining</em></span> events have queued up. This is
+    <span class="emphasis"><em>asynchronous processing</em></span>.</p><p>This lab is broken into two sections. In the first section you will
+    complete the steps necessary to send incoming <span class="emphasis"><em>Dining</em></span>
+    objects as messages to an AMQP Exchange. In the second section you will consume
+    those messages from a Queue and process them with the
+    <span class="emphasis"><em>DiningProcessor</em></span> object.</p><div class="orderedlist"><p class="title"><b>What you will learn</b></p><ol type="1"><li><p>How to configure and use Spring's
+        <span class="emphasis"><em>RabbitTemplate</em></span></p></li><li><p>How to configure and use Spring's
+        <span class="emphasis"><em>MessageListenerContainer</em></span> support, via the
+        <span class="emphasis"><em>rabbit:</em></span> namespace.</p></li></ol></div><p>Estimated time to complete: 60 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="amqp-lab-prerequisites"></a>14.2.&nbsp;Prerequisites</h2></div></div></div><p>In order to complete this lab, you must first install RabbitMQ
+	on your workstation.  You can find the download and installation guides
+	<a href="http://www.rabbitmq.com/download.html" target="_top"><span class="emphasis"><em>here</em></span></a>.
+	Choose the appropriate download and installation guide for your OS.</p><p>Once you have completed the installation, start the RabbitMQ broker 
+	and	leave it running for the duration of the lab.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="amqp-lab-quick-instructions"></a>14.3.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions</p><div class="orderedlist"><ol type="1"><li><p><span class="bold"><strong>Process five <code class="literal">Dining</code> objects through the
+        diningProcessor (TODO 01)</strong></span></p><p>Open <code class="literal">DiningProcessorTests</code> and process five Dining objects
+        through the <code class="literal">diningProcessor</code>. Now run the test. You will see an
+        <code class="literal">UnsupportedOperationException</code>. </p></li><li><p><span class="bold"><strong>Convert the <code class="literal">dining</code> to a message and send
+        it to its destination (TODO 02)</strong></span> </p><p>Click on the exception from the stack trace and implement the
+        <code class="literal">process(Dining)</code> method on <code class="literal">AmqpDiningProcessor</code>. Run the test again to
+        see the effect. The test will still fail. You should see a
+        <code class="literal">NullPointerException</code>.</p></li><li><p><span class="bold"><strong>Define a <code class="literal">RabbitTemplate</code> bean and inject the
+        <code class="literal">rabbitConnectionFactory</code> bean defined in the <code class="literal">amqp-infrastructure-config.xml</code>.
+		(TODO 03)</strong></span> </p><p>Inject the <code class="literal">RabbitTemplate</code> bean into the <code class="literal">diningProcessor</code>
+        bean. Now run <code class="literal">DiningProcessorTests</code> once again. The Test should
+        pass.</p></li><li><p><span class="bold"><strong>Wait for the batch and assert it's size is
+        5 (modify the assertion) (TODO 04)</strong></span> </p><p>Use the <code class="literal">waitForBatch()</code> to wait 10 seconds for the 5 dinings to
+        get sent, consumed and routed through the <code class="literal">RewardNetwork</code>. Run
+        <code class="literal">DiningProcessorTests</code> again. It should fail.</p></li><li><p><span class="bold"><strong>Wire the <code class="literal">rewardNetwork</code> in an amqp-listener
+        inside an <code class="literal">amqp-listener-container</code> (TODO 05)</strong></span> </p><p>Open up <code class="literal">amqp-rewards-config.xml</code>. Use the <code class="literal">rabbit:</code> namespace to create
+        a <code class="literal">listener-container</code> with a single nested listener that references the
+        <code class="literal">rewardNetwork</code> bean. Configure it to take its input from
+        <code class="literal">rewards.queue.dining</code> and send its output to the default
+		<code class="literal">response-exchange</code> (empty string), with a <code class="literal">response-routing-key</code> of
+        <code class="literal">rewards.queue.confirmation</code>.</p><p>Note that when you run the test now for the first time, it will fail because it picks up messages
+		that were previously published.  However, once those messages have been consumed, from that point on the
+		test should pass.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="amqp-lab-instructions"></a>14.4.&nbsp;Instructions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e7069"></a>14.4.1.&nbsp;Sending Dining Messages to a Destination</h3></div></div></div><p>In this section you will see how to convert a
+      <span class="emphasis"><em>Dining</em></span> instance into an AMQP
+      <span class="emphasis"><em>Message</em></span> and send it to an
+      <span class="emphasis"><em>Exchange</em></span> for delivery to a <span class="emphasis"><em>queue</em></span>.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7086"></a>14.4.1.1.&nbsp;Step 1. Modify the test</h4></div></div></div><p>Open <span class="emphasis"><em>DiningProcessorTests</em></span> and complete
+        <span class="emphasis"><em>TODO 01</em></span>. Now run the test. You will see an
+        <span class="emphasis"><em>UnsupportedOperationException</em></span>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7100"></a>14.4.1.2.&nbsp;Step 2. Resolve the error</h4></div></div></div><p>Click on the exception from the stack trace and implement the
+        <span class="emphasis"><em>process(Dining)</em></span> method on
+        <span class="emphasis"><em>AmqpDiningProcessor</em></span> (<span class="emphasis"><em>TODO
+        02</em></span>).</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>When converting and sending the <span class="emphasis"><em>Dining</em></span>
+          object as a <span class="emphasis"><em>Message</em></span>, you will need to
+          specify the destination queue <span class="emphasis"><em>rewards.queue.dining</em></span> as
+		  the routing key. The destination <span class="emphasis"><em>queue</em></span> has already been set up in the
+          <span class="emphasis"><em>amqp-infrastructure-config.xml</em></span> file.</p></td></tr></table></div><p>When you're finished making the change, run the test again to
+        see the effect. The test will still fail, but you should see a
+        <span class="emphasis"><em>NullPointerException</em></span> this time.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7137"></a>14.4.1.3.&nbsp;Step 3. Set up the <span class="emphasis"><em>RabbitTemplate</em></span></h4></div></div></div><p>The root cause of the <span class="emphasis"><em>NullPointerException</em></span>
+        above is that the <span class="emphasis"><em>RabbitTemplate</em></span> was not injected
+        into our <span class="emphasis"><em>DiningProcessor</em></span> object.</p><p>To fix this problem, open <span class="emphasis"><em>client-config.xml</em></span>
+        and look at the <span class="emphasis"><em>diningProcessor</em></span> bean definition.
+        Notice that it is indeed missing its <span class="emphasis"><em>amqpTemplate</em></span>
+        property. Complete <span class="emphasis"><em>TODO 03</em></span> by defining a
+        <span class="emphasis"><em>RabbitConnectionFactory</em></span> bean, and injecting it into a <span class="emphasis"><em>RabbitTemplate</em></span>
+		bean.  Finally, inject the <span class="emphasis"><em>RabbitTemplate</em></span> bean into the
+        <span class="emphasis"><em>diningProcessor</em></span> appropriately.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Use the rabbit:connection-factory namespace to declare the
+		  <span class="emphasis"><em>rabbitConnectionFactory</em></span> bean.</p><p>Inject the <span class="emphasis"><em>onnectionFactory</em></span> property on your
+          <span class="emphasis"><em>RabbitTemplate</em></span> bean definition. The
+          <span class="emphasis"><em>rabbitConnectionFactory</em></span> has already been defined for this
+          purpose in the <span class="emphasis"><em>amqp-infrastructure-config.xml</em></span>. Refer to
+          this file to understand how the bean and queues are declared.</p></td></tr></table></div><p>Now run <span class="emphasis"><em>DiningProcessorTests</em></span> once again.
+        You should have a green bar, meaning that you've successfully
+        processed the five <span class="emphasis"><em>Dining</em></span> objects and sent them
+        to the <span class="emphasis"><em>rewards.queue.dining</em></span> destination.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7210"></a>14.4.1.4.&nbsp;Receiving dining messages from a destination using AMQP
+        listener</h4></div></div></div><p>In this section you will implement the receiving end of the
+        application. The goal is to watch the
+        <span class="emphasis"><em>rewards.queue.dining</em></span> destination and route
+        <span class="emphasis"><em>Dining</em></span> objects through our existing
+        <span class="emphasis"><em>RewardNetwork</em></span> implementation as they arrive. In
+        this way, the <span class="emphasis"><em>RewardNetwork</em></span> object will become a
+        participant in an <span class="emphasis"><em>event-driven application</em></span>
+        without requiring you to write any extra code.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: A note about&#xA;          RewardConfirmationLogger"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">A note about
+          <span class="emphasis"><em>RewardConfirmationLogger</em></span></th></tr><tr><td align="left" valign="top"><p>Notice in <span class="emphasis"><em>DiningProcessorTests</em></span> that an
+          object of type <span class="emphasis"><em>RewardConfirmationLogger</em></span> is
+          injected using <span class="emphasis"><em>@Autowired</em></span>. This object is
+          configured to listen on a second AMQP destination named
+          <span class="emphasis"><em>rewards.queue.confirmation</em></span>, which has already
+          been set up for you. Every time a
+          <span class="emphasis"><em>RewardConfirmation</em></span> gets placed on that queue,
+          the <span class="emphasis"><em>RewardConfirmationLogger</em></span> consumes it and
+          adds it to its <span class="emphasis"><em>confirmations</em></span> collection.</p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7258"></a>14.4.1.5.&nbsp;Step 4. Modify the test</h4></div></div></div><p>Go back to <span class="emphasis"><em>DiningProcessorTests</em></span> and
+        complete <span class="emphasis"><em>TODO 04</em></span>. Use the
+        <span class="emphasis"><em>waitForBatch()</em></span> to wait 10 seconds for our 5
+        dinings to get sent, consumed and routed through the
+        <span class="emphasis"><em>RewardNetwork</em></span>.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Look at the implementation of
+          <span class="emphasis"><em>waitForBatch()</em></span>. Notice that it polls the size
+          of the <span class="emphasis"><em>RewardConfirmationLogger</em></span>'s
+          <span class="emphasis"><em>confirmations</em></span> collection for the specified
+          number of seconds. The method returns as soon as the desired number
+          of <span class="emphasis"><em>RewardConfirmations</em></span> have been processed or
+          the specified number of seconds to wait runs out, whichever comes
+          first.</p></td></tr></table></div><p>Run <span class="emphasis"><em>DiningProcessorTests</em></span> again. It should
+        fail, which makes sense because we haven't yet wired up the
+        <span class="emphasis"><em>RewardNetwork</em></span> as a listener on the
+        <span class="emphasis"><em>rewards.queue.dining</em></span> destination.
+        <span class="emphasis"><em>waitForBatch()</em></span> just times out after 10 seconds -
+        no <span class="emphasis"><em>Dining</em></span> objects have been passed through
+        <span class="emphasis"><em>RewardNetwork</em></span>, thus no confirmation messages have
+        shown up for the logger to record.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e7310"></a>14.4.1.6.&nbsp;Step 5. Wire up <span class="emphasis"><em>rewardNetwork</em></span> in a
+        listener container</h4></div></div></div><p>Open up <span class="emphasis"><em>amqp-rewards-config.xml</em></span>. You can see
+        that it's empty. Complete <span class="emphasis"><em>TODO 05</em></span> by using the
+        <span class="emphasis"><em>rabbit:</em></span> namespace to create a
+        <span class="emphasis"><em>listener-container</em></span> with a single nested
+        <span class="emphasis"><em>listener</em></span> that references the
+        <span class="emphasis"><em>rewardNetwork</em></span> bean. Configure it to take its
+        input from <span class="emphasis"><em>rewards.queue.dining</em></span> and send its
+        output to <span class="emphasis"><em>rewards.queue.confirmation</em></span>.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Tip: Understanding queue-names"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip: Understanding <span class="emphasis"><em>queue-names</em></span></th></tr><tr><td align="left" valign="top"><p>When creating your <span class="emphasis"><em>rabbit:listener</em></span> element,
+          you'll need to specify the <span class="emphasis"><em>queue-names</em></span>
+          attribute. This signifies what AMQP queue the listener consumes
+          messages from. In this case, you're specifying the <span class="emphasis"><em>name
+          of the queue</em></span> as it exists in the AMQP broker. So,
+          use <span class="emphasis"><em>rewards.queue.dining</em></span> for the value of
+          <span class="emphasis"><em>destination</em></span>.</p></td></tr></table></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Recall that the method to invoke on
+          <span class="emphasis"><em>RewardNetwork</em></span> is
+          <span class="emphasis"><em>rewardAccountFor(Dining)</em></span>. The
+          <span class="emphasis"><em>rabbit:listener</em></span> element provides a
+          <span class="emphasis"><em>method</em></span> attribute where you can specify
+          this.</p></td></tr></table></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Tip: Understanding response-exchange and response-routing-key"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip: Understanding <span class="emphasis"><em>response-exchange</em></span> and <span class="emphasis"><em>response-routing-key</em></span></th></tr><tr><td align="left" valign="top"><p>If the <span class="emphasis"><em>response-exchange</em></span> is left as an empty string,
+		  then the message will be published to the AMQP default exchange.  Note that
+		  every queue declared is automatically bound to the AMQP default direct exchange with
+		  a <span class="emphasis"><em>routingKey</em></span> of the queue name.  So for the <span class="emphasis"><em>response-routing-key</em></span>,
+		  it is necessary to specify <span class="emphasis"><em>rewards.queue.confirmation</em></span> so that the messages
+		  are routed to the <span class="emphasis"><em>rewards.queue.confirmation</em></span> queue.</p></td></tr></table></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Tip: Don't forget content assist!"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip: Don't forget content assist!</th></tr><tr><td align="left" valign="top"><p>Use <span class="emphasis"><em>ctrl-space</em></span> to help you while filling
+          out the <span class="emphasis"><em>rabbit:</em></span> namespace elements. STS is aware
+          of the <span class="emphasis"><em>rabbit:</em></span> namespace and makes content assist
+          available in a number of places.</p></td></tr></table></div><p>Now run the test again to confirm that this is working. It
+		may fail the first time due to unprocessed messages left on the queue.
+		If so, rerun it as the messages will have been consumed by the initial
+		test run.  If you've got the green bar, you've successfully put together an
+        asynchronous processing pipeline for <span class="emphasis"><em>Dining</em></span>
+        objects. Congratulations!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xd-intro-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="remoting-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;13.&nbsp;Introduction to Spring XD&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;15.&nbsp;remoting: Distributing an application using RMI and Spring
+  Remoting</td></tr></table></div></body></html>

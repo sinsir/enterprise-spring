@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beansProjectDescription>
+	<version>1</version>
+	<pluginVersion><![CDATA[2.2.3.RELEASE]]></pluginVersion>
+	<configSuffixes>
+		<configSuffix><![CDATA[xml]]></configSuffix>
+	</configSuffixes>
+	<enableImports><![CDATA[true]]></enableImports>
+	<configs>
+		<config>src/main/resources/rewards/messaging/client/client-infrastructure-config.xml</config>
+		<config>src/main/resources/rewards/messaging/server/infrastructure-config.xml</config>
+		<config>src/main/resources/rewards/messaging/server/jms-rewards-config.xml</config>
+		<config>src/main/resources/rewards/messaging/server/jmx-config.xml</config>
+		<config>src/main/resources/rewards/messaging/client/receiver/receiver-config.xml</config>
+		<config>src/main/resources/rewards/messaging/client/sender/sender-config.xml</config>
+	</configs>
+	<configSets>
+		<configSet>
+			<name><![CDATA[server]]></name>
+			<allowBeanDefinitionOverriding>true</allowBeanDefinitionOverriding>
+			<incomplete>false</incomplete>
+			<configs>
+				<config>src/main/resources/rewards/messaging/server/infrastructure-config.xml</config>
+				<config>src/main/resources/rewards/messaging/server/jms-rewards-config.xml</config>
+				<config>src/main/resources/rewards/messaging/server/jmx-config.xml</config>
+			</configs>
+		</configSet>
+	</configSets>
+</beansProjectDescription>

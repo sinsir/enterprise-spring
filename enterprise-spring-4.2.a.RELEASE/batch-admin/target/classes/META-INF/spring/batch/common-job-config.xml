@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<bean id="diningRequestsReader" class="org.springframework.batch.item.file.FlatFileItemReader" scope="step">
+		<property name="resource" value="#{jobParameters['input.resource.path']}"/>
+		<property name="strict" value="true"/>
+		<property name="lineMapper">
+			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+				<property name="lineTokenizer">
+					<bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+						<property name="names">
+							<list>
+								<value>creditCardNumber</value>
+								<value>merchantNumber</value>
+								<value>amount</value>
+								<value>date</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+				<property name="fieldSetMapper">
+					<bean class="rewards.batch.DiningFieldSetMapper"/>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="incrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer"/>
+	
+</beans>

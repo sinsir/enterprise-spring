@@ -1,0 +1,116 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;17.&nbsp;ws-advanced: Advanced Spring Web Services</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="soap-ws-lab.html" title="Chapter&nbsp;16.&nbsp;soap-ws: Exposing SOAP Endpoints using Spring Web Services"><link rel="next" href="spring-configuration.html" title="Appendix&nbsp;A.&nbsp;Spring XML Configuration Tips"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="ws-advanced"></a>Chapter&nbsp;17.&nbsp;ws-advanced: Advanced Spring Web Services</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="ws-advanced-lab-introduction"></a>17.1.&nbsp;Introduction</h2></div></div></div><p>In this lab you'll see how interceptors and error handling can be
+    applied to send specific faults back to a SOAP client and how this can be
+    tested without the need to deploy an application to a local server.</p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>Adding logging and validation</p></li><li><p>Configuring SOAP-specific error handling</p></li><li><p>Running out-of-container integration tests for your Spring-WS
+        applications</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Logging and validating interceptors</p></li><li><p>Exception to SOAP fault mapping</p></li><li><p>Spring-WS 2.0's new integration testing support</p></li></ol></div><p>Estimated time to complete: 30 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="ws-advanced1-lab-quick-instructions"></a>17.2.&nbsp;Quick Instructions</h2></div></div></div><p>Quick instructions for this exercise have been embedded within the lab materials
+    in the form of TODO comments.  To display them, open the <code class="literal">Tasks</code> view 
+    (Window -&gt; Show view -&gt; Tasks (<span class="emphasis"><em>not Task List</em></span>)).</p><p>Occasionally, TODO'S defined within XML files may fail to appear in 
+    the <code class="literal">Tasks</code> view (i.e. gaps in the number sequence).  To correct this, 
+    go to <code class="literal">Preferences -&gt; General -&gt; Editors -&gt; Structured Text Editor -&gt; Task Tags</code>
+    pane.  Check <code class="literal">Enable searching for Task Tags</code> and click <code class="literal">Clean and Redetect Tasks</code>.
+    On the <code class="literal">Filters</code> tab, ensure XML content type is checked.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="ws-advanced-lab-instructions"></a>17.3.&nbsp;Instructions</h2></div></div></div><p>The instructions for this lab are organized into sections. First
+    you'll add exception handling for requests that do not pass validation
+    against the published XML Schema and test that using the new integration
+    testing support in Spring-WS 2.0. Then you'll add exception handling for
+    when the given input doesn't match data that's stored in the database and
+    test that as well.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e8503"></a>17.3.1.&nbsp;Verifying successful handling of valid requests</h3></div></div></div><p>Your first assignment is to add validation to incoming requests.
+      Before you add the corresponding interceptor, it would be good to
+      establish that valid requests result in an expected response first: that
+      way you can check if you didn't introduce any regressions.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e8508"></a>17.3.1.1.&nbsp;Run an end-to-end test</h4></div></div></div><p>(TODO 01) First deploy the project to the local server instance. This
+        project is basically the same as the solution to the Spring-WS
+        (soap-ws) lab, so if you did that lab, you already understand how it
+        works. Once the server has started, run the
+        <code class="classname">SoapRewardNetworkTests</code> to verify that the
+        application works as expected. It would be nice if you could see what
+        a valid request made by the client looks like, so you can test with
+        both valid and invalid requests after adding validation
+        support.</p><p>(TODO 02) Add a logging interceptor to the application.
+        Open <code class="filename">rewardNetwork-servlet-config.xml</code> (it's in
+        the <code class="filename">WEB-INF</code> directory). Add a 
+        <code class="literal">&lt;ws:interceptors&gt;</code>
+        element with an inner bean definition for a
+        <code class="classname">PayloadLoggingInterceptor</code>. Restart the
+        application and run the end-to-end test again. You should now see the
+        payload for both the request and the response in the Console View that
+        contains the server output. </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Note that the output is logged at <code class="literal">DEBUG</code>
+            level: in the <code class="filename">log4j.xml</code> config file you can
+            check that logging for the relevant category has indeed been set
+            to <code class="literal">DEBUG</code>.</p></td></tr></table></div><p>Now that we know what input to test with, it would be preferable
+        if we could use an out-of-container integration test so that you don't
+        need to deploy to the server and restart all the time. This is what
+        you'll do in the next section.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e8544"></a>17.3.1.2.&nbsp;Write an out-of-container integration test</h4></div></div></div><p>(TODO 03) A start for the test has been given already: open
+        <code class="classname">ServerIntegrationTests</code> and autowire an
+        <code class="interfacename">ApplicationContext</code> into a new field for
+        the class.  Use this to create a new
+        <code class="classname">MockWebServiceClient</code> that you assign to the
+        pre-defined field variable.</p><p>(TODO 04) The next step is to write a test that checks for the correct
+        response payload given a valid request payload. Using the information
+        from the Console, complete the test method by using the 
+        <code class="varname">mockClient</code> to check that a
+        request with the given payload results in a response with the given
+        payload. Refer back to the slides for details: note that the static
+        methods of the <code class="classname">ResponseMatchers</code> class are
+        already imported. </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Unfortunately Eclipse will not suggest any of these methods
+            when you use code assist (Ctrl-Space) unless you type at least one
+            letter of the method you want to invoke, so make sure to do that
+            in order to see the available methods.</p></td></tr></table></div><p> You can stop the server now, since we no longer need
+        it.</p><p>Now run the test and notice that it fails. Check the output in
+        the Console View to see why: the application context created by the
+        test is not a <code class="interfacename">WebApplicationContext</code>, so
+        it cannot find the referenced XML schema.</p><p>(TODO 05) To fix this, move the
+        <code class="filename">schemas</code> directory from the
+        <code class="filename">WEB-INF</code> folder to the
+        <code class="filename">src/main/resources</code> folder and updating the
+        <code class="literal">location</code> attribute of the
+        <code class="literal">&lt;ws:xsd&gt;</code> element in
+        <code class="filename">rewardNetwork-servlet-config.xml</code> accordingly.
+        </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Remember that Spring uses a <code class="literal">classpath:</code>
+            prefix for resources located on the classpath.</p></td></tr></table></div><p>Run the test again and ensure that it passes. Check the log
+        output to verify that the regular handler chain including interceptors
+        is still invoked, even though you're running the test
+        out-of-container.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e8603"></a>17.3.2.&nbsp;Adding validation for incoming requests</h3></div></div></div><p>We want invalid incoming requests to result in a SOAP Client
+      fault.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e8608"></a>17.3.2.1.&nbsp;Write a test that verifies validation</h4></div></div></div><p>(TODO 06) To see what currently happens for invalid requests, first switch
+        back to the <code class="classname">ServerIntegrationTests</code> and complete
+        the test method by sending a request without a
+        <code class="literal">creditCardNumber</code> attribute and verify that you
+        receive a 'Client' or 'Sender' fault in the
+        <code class="methodname">invalidRequestWithoutCreditCardNumber</code> test
+        method. </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>'Sender' is the term used by SOAP 1.2, but most applications
+            still use SOAP 1.1.</p></td></tr></table></div><p>Run the test and notice that it fails: the client is getting a
+        'Server' instead of a 'Client' fault code, which is the result of the
+        server not knowing how to handle empty credit card numbers. This can
+        easily be fixed by validating the incoming request against the schema
+        you created in the previous lab.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e8627"></a>17.3.2.2.&nbsp;Add the validating interceptor</h4></div></div></div><p>(TODO 07) Switch to <code class="filename">rewardNetwork-servlet-config.xml</code>
+        and add a <code class="classname">PayloadValidatingInterceptor</code> with a
+        <code class="literal">schema</code> property that refers to the schema in the
+        <code class="filename">schemas</code> directory that's on the classpath.</p><p>Run your test again and make sure that it passes now.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e8646"></a>17.3.3.&nbsp;Mapping certain exceptions to certain SOAP faults</h3></div></div></div><p>You've made sure that requests that don't pass validation will
+      result in a 'Client' fault and will not be processed by the endpoint.
+      But what about requests that simply contain invalid attribute
+      values?</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e8651"></a>17.3.3.1.&nbsp;Write a test that checks for a Client error for invalid
+        attribute values</h4></div></div></div><p>(TODO 08) To test that, switch back to
+        <code class="classname">ServerIntegrationTests</code> and implement the
+        <code class="methodname">invalidRequestWithUnknownCreditCardNumber</code>
+        test method. Just reuse the request source from the first test method
+        and change the credit card number into something else, and then make
+        sure that the client receives a 'Client' fault again.</p><p>Run the test and notice that it fails: the server is sending a
+        'Server' fault. Look at the output in the Console View to note the
+        type of the exception that caused this. We'd like to map this standard
+        Spring exception onto a 'Client' fault, since it's not the server's
+        fault that the client is specifying non-existing data.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e8664"></a>17.3.3.2.&nbsp;Add an exception resolver to map to a Client fault</h4></div></div></div><p>(TODO 09) To make it so, switch back to
+        <code class="filename">rewardNetwork-servlet-config.xml</code> and add a bean of type
+        <code class="classname">SoapFaultMappingExceptionResolver</code> that maps the
+        thrown exception to a 'Client' fault and defaults to 'Server' faults
+        for other exceptions. Check the slides for details if you need any
+        help with this.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>The system defines two other resolvers by default -
+          <code class="classname">SoapFaultAnnotationExceptionResolver</code> and
+          <code class="classname">SimpleSoapExceptionResolver</code>. The second is
+          the default catch-all so the server always returns a
+          <code class="literal">SERVER</code> fault unless otherwise configured. The
+          order that resolvers are used is defined by their
+          <code class="literal">order</code> bean property. The defaults are 0 and
+          MAXINT respectively. We need to make sure our resolver is used
+          first, so set its order bean property to the value -1:
+          <code class="code">&lt;property name="order" value="-1"/&gt;</code>. Any value
+          less than zero will do.</p></td></tr></table></div><p>Now run the test again and make sure it succeeds this time. When
+        you've completed this step, you're done with lab.</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="soap-ws-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="spring-configuration.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;16.&nbsp;soap-ws: Exposing SOAP Endpoints using Spring Web Services&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Appendix&nbsp;A.&nbsp;Spring XML Configuration Tips</td></tr></table></div></body></html>

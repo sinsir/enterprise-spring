@@ -1,0 +1,188 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;6.&nbsp;tx-xa: Using Global JTA Transactions</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="jms-tx-lab.html" title="Chapter&nbsp;5.&nbsp;jms-tx: Add Transactional Capabilities to the JMS Interaction"><link rel="next" href="si-intro-lab.html" title="Chapter&nbsp;7.&nbsp;si-intro: Refactoring from JMS to Spring Integration"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="tx-xa-lab"></a>Chapter&nbsp;6.&nbsp;tx-xa: Using Global JTA Transactions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="tx-xa-lab-introduction"></a>6.1.&nbsp;Introduction: Using Global JTA Transactions for Atomic Behavior
+    Across Multiple Transactional Resources</h2></div></div></div><p>In this lab you will gain experience with using JTA for global
+    transactions. This enables atomic behavior for operations across multiple
+    transactional resources in a single transaction. In this case, these
+    resources are a messaging provider and a database.</p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>The need for XA for truly atomic operations across multiple
+        transactional resources</p></li><li><p>Configuring a JTA transaction manager in Spring</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Atomikos Transaction Essentials</p></li><li><p>Spring's <span class="emphasis"><em>JtaTransactionManager</em></span></p></li><li><p>Spring's support for using an external transaction manager in
+        your <span class="emphasis"><em>DefaultMessageListenerContainer</em></span></p></li></ol></div><p>Estimated time to complete: 30 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="tx-xa-lab-quick-instructions"></a>6.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions</p><div class="orderedlist"><ol type="1"><li><p>Add JTA support to the server's infrastructure. In the
+        <code class="classname">InfrastructureConfig</code> configuration class,
+        replace the type of <code class="literal">transactionManager</code>
+        to <code class="literal">org.springframework.transaction.jta.JtaTransactionManager</code>.
+        Set the
+        two properties for this bean: <code class="literal">transactionManager</code> and <code class="literal">userTransaction</code>,
+        using the following Java code (TODO 01):
+        
+</p><pre class="programlisting">
+@Bean PlatformTransactionManager transactionManager() throws Exception {
+	JtaTransactionManager transactionManager = new JtaTransactionManager();
+	transactionManager.setTransactionManager(userTransactionManager());
+	
+	UserTransactionImp userTransaction = new UserTransactionImp();
+	userTransaction.setTransactionTimeout(300);
+	transactionManager.setUserTransaction(userTransaction);
+	
+	return transactionManager;
+}
+
+@Bean(destroyMethod="close") UserTransactionManager userTransactionManager() throws Exception {
+	UserTransactionManager userTransactionManager = new UserTransactionManager();
+	userTransactionManager.init();
+	return userTransactionManager;
+}
+</pre></li><li><p>Replace <code class="literal">EmbeddedDataSource40</code> with its XA-aware variant <code class="literal">EmbeddedXADataSource40</code>, and wrap it inside an AtomikosDataSourceBean (TODO 02).</p></li><li><p>Replace <code class="literal">ActiveMQConnectionFactory</code> with <code class="literal">ActiveMQXAConnectionFactory</code>, and wrap it inside an AtomikosConnectionFactoryBean (TODO 03).</p></li><li><p>Open the <code class="classname">JmsRewardsConfig</code> configuration class, 
+        and set up the <code class="literal">transactionManager</code> property on the
+        <code class="classname">DefaultJmsListenerContainerFactory</code> bean (TODO 04).</p></li><li><p>Start the server by running the <code class="literal">StartServer</code> application.</p></li><li><p>Run the <code class="literal">StartSender</code> application. Start JConsole and verify that there are 5 new confirmations in the database and 5 new messages on the confirmation queue.</p></li><li><p>In JConsole, set the <code class="literal">CauseErrorAfterReceiving</code> flag of the <code class="literal">DiningListener</code> to <code class="literal">true</code> and verify that the behavior is the same as before when you send new messages.</p></li><li><p>Reset the <code class="literal">CauseErrorAfterReceiving</code> flag to <code class="literal">false</code> again and now set the <code class="literal">CauseErrorAfterProcessing</code> flag to <code class="literal">true</code>. Run the <code class="literal">StartSender</code> application again and verify that no new confirmations were added to the database this time.</p></li><li><p>Reset the <code class="literal">CauseErrorAfterProcessing</code> flag to <code class="literal">false</code> again and now set the <code class="literal">CauseErrorAfterSending</code> flag to <code class="literal">true</code>. Send new messages again, and verify that this time both transactional resources are rolled back.</p></li></ol></div><p>Congratulation, you have successfully completed the lab!</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="tx-xa-lab-instructions"></a>6.3.&nbsp;Instructions</h2></div></div></div><p>In this lab you'll rework the application from the previous lab to
+    use global XA transactions with the use of a JTA transaction manager to
+    solve the errors that still exist when using local transactions
+    only.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3361"></a>6.3.1.&nbsp;Introducing JTA to have a global transaction in place for the
+      <span class="emphasis"><em>DiningListener</em></span></h3></div></div></div><p>Adding support for JTA, which is the Java API for global
+      transaction management, to a Spring application typically requires no
+      code changes: you only need to change some configuration. This is one of the many
+      benefits of using Spring for transaction management. In this section
+      we'll show you how to do this by using a stand-alone, open-source JTA
+      implementation called <span class="emphasis"><em>Atomikos</em></span>. Most Enterprise
+      Java applications that use JTA will use the JTA support that ships with
+      the application server they're deployed on, but in our case we're not
+      using a full-blown Java EE server with JTA support.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e3371"></a>6.3.1.1.&nbsp;Step 1: Add JTA support to the server's infrastructure</h4></div></div></div><p>Open the <code class="classname">InfrastructureConfig</code> configuration class.
+        Complete <span class="emphasis"><em>TODO 01</em></span> by replacing the
+        <code class="literal">transactionManager</code> bean of type
+        <code class="classname">DataSourceTransactionManager</code> with a bean of the
+        same name of type
+        <code class="classname">org.springframework.transaction.jta.JtaTransactionManager</code>.
+        This bean allows Spring to let your transactional resources
+        participate in global transactions managed by an external JTA
+        transaction manager. You need to set two properties for this bean:
+        <span class="emphasis"><em>transactionManager</em></span> and
+        <span class="emphasis"><em>userTransaction</em></span>. The configuration of these
+        properties is highly Atomikos-specific, so we'll simply provide you
+        with the Java configuration you need to use.</p><pre class="programlisting">@Bean PlatformTransactionManager transactionManager() throws Exception {
+	JtaTransactionManager transactionManager = new JtaTransactionManager();
+	transactionManager.setTransactionManager(userTransactionManager());
+	
+	UserTransactionImp userTransaction = new UserTransactionImp();
+	userTransaction.setTransactionTimeout(300);
+	transactionManager.setUserTransaction(userTransaction);
+	
+	return transactionManager;
+}
+
+@Bean(destroyMethod="close") UserTransactionManager userTransactionManager() throws Exception {
+	UserTransactionManager userTransactionManager = new UserTransactionManager();
+	userTransactionManager.init();
+	return userTransactionManager;
+}</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: Note on the transactionManager configuration"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note on the transactionManager configuration</th></tr><tr><td align="left" valign="top"><p>In a Java EE server, you typically wouldn't need this: just
+          adding a <code class="literal">&lt;tx:jta-transaction-manager/&gt;</code>
+          would be enough to define the
+          <span class="emphasis"><em>transactionManager</em></span>. If you were using Java configuration,
+          you would directly use the appropriate transaction manager implementation,
+          e.g. <code class="classname">WebLogicJtaTransactionManager</code>.
+          We only need this
+          configuration because we're using a stand-alone JTA transaction
+          manager not provided by our deployment environment.</p></td></tr></table></div><p>Now implement <span class="emphasis"><em>TODO 02</em></span> by replacing the
+        current <code class="classname">EmbeddedDataSource40</code> with its XA-aware
+        variant <code class="classname">EmbeddedXADataSource40</code>. To make this
+        <code class="classname">DataSource</code> participate properly in the
+        Atomikos-managed global transactions, Atomikos provides a wrapper for
+        the data source called
+        <code class="classname">com.atomikos.jdbc.AtomikosDataSourceBean</code>. Wrap
+        the current <span class="emphasis"><em>dataSource</em></span> bean definition with this
+        type and set its <span class="emphasis"><em>xaDataSource</em></span> property to the
+        existing bean by turning that into an <span class="emphasis"><em>inner bean</em></span>.
+        Because this is again very Atomikos-specific, we'll provide you with
+        the complete bean definition here:</p><pre class="programlisting">
+@Bean(destroyMethod="close") DataSource dataSource() throws Exception {
+	AtomikosDataSourceBean atomikosDataSourceBean = new AtomikosDataSourceBean();
+	atomikosDataSourceBean.setUniqueResourceName("XADBMS");
+				
+	EmbeddedXADataSource40 dataSource = new EmbeddedXADataSource40();
+	dataSource.setDatabaseName("rewardsdb");
+	dataSource.setCreateDatabase("create");
+	
+	atomikosDataSourceBean.setXaDataSource(dataSource);
+	atomikosDataSourceBean.init();
+	return atomikosDataSourceBean;
+}
+   </pre><p>Now implement <span class="emphasis"><em>TODO 03</em></span> by doing the same
+        thing for the <code class="classname">ActiveMQConnectionFactory</code>. The
+        complete bean definition for that looks like this:</p><pre class="programlisting">
+@Bean(destroyMethod="close") ConnectionFactory connectionFactory() throws Exception {
+	AtomikosConnectionFactoryBean atomikosConnectionFactoryBean = 
+	new AtomikosConnectionFactoryBean();
+	atomikosConnectionFactoryBean.setUniqueResourceName("QUEUE_BROKER");
+	
+	ActiveMQXAConnectionFactory connectionFactory = new ActiveMQXAConnectionFactory();
+	connectionFactory.setBrokerURL("vm:broker:(tcp://localhost:61616)?persistent=false");
+	RedeliveryPolicy redeliveryPolicy = new RedeliveryPolicy();
+	redeliveryPolicy.setMaximumRedeliveries(3);
+	connectionFactory.setRedeliveryPolicy(redeliveryPolicy);
+	
+	atomikosConnectionFactoryBean.setXaConnectionFactory(connectionFactory);
+	
+	atomikosConnectionFactoryBean.init();
+	return atomikosConnectionFactoryBean;
+}
+   </pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: Note on the dataSource and connectionFactory&#xA;          configurations"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note on the dataSource and connectionFactory
+          configurations</th></tr><tr><td align="left" valign="top"><p>In a Java EE application, these resources would be configured
+          in the server and not in your application. You wouldn't need to wrap
+          the <code class="classname">EmbeddedXADataSource40</code> and
+          <code class="classname">ActiveMQXAConnectionFactory</code> then, as the
+          container would take care of everything. In your Spring application,
+          you'd simply use a JNDI lookup. Again,
+          we only need to do this because we're using a stand-alone JTA
+          transaction manager.</p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e3462"></a>6.3.1.2.&nbsp;Step 2: Make the
+        <code class="classname">DefaultMessageListenerContainer</code> participate in
+        the JTA transaction</h4></div></div></div><p>You're almost done with the JTA configuration; we just need to
+        tell the JMS listener container to use the JTA transaction manager. We
+        don't need to do this for the JDBC operations performed by the
+        <code class="classname">RewardNetwork</code> implementation, as these will
+        automatically use the <code class="classname">Connection</code> enlisted with
+        the current JTA transaction.</p><p>Open the <code class="classname">JmsRewardsConfig</code> and
+        complete <span class="emphasis"><em>TODO 04</em></span> by
+        setting the <code class="literal">transactionManager</code> property on the 
+        <code class="literal">jmsListenerContainerFactory</code>. Leave the
+        <span class="emphasis"><em>sessionTransacted</em></span> attribute in place: in a Java EE
+        setting you wouldn't need it, as the value of the boolean flag passed
+        into <code class="methodname">javax.jms.Connection.createSession(flag,
+        ackMode)</code> is simply ignored with JTA, but Atomikos
+        requires it to be <span class="emphasis"><em>true</em></span> to start a global
+        transaction!</p><p>That's it: you've now switched from using two local transactions
+        to using a global transaction managed by a JTA transaction manager!
+        Let's have a look at the result. Notice that no code changes were
+        required.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3501"></a>6.3.2.&nbsp;Reviewing the result of the same errors under a global
+      transaction</h3></div></div></div><p>Now that you've configured the use of a JTA transaction, start the
+      server by running the <code class="classname">StartServer</code> application.
+      Make sure you use the right project, don't start the server from the
+      jms-tx lab again by accident!</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e3509"></a>6.3.2.1.&nbsp;Step 3: Run the application without errors</h4></div></div></div><p>First run the <code class="classname">StartSender</code> application to
+        see if the application still works as expected when no errors occur.
+        As before, be sure to add the VM argument '-Dcom.sun.management.jmxremote' 
+        to enable JMX monitoring.
+        Start JConsole and verify that there are 5 new confirmations in the
+        database and 5 new messages on the confirmation queue.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e3517"></a>6.3.2.2.&nbsp;Step 4: Cause an error after receiving the message</h4></div></div></div><p>Set the <span class="emphasis"><em>CauseErrorAfterReceiving</em></span> flag of
+        the <span class="emphasis"><em>DiningListener</em></span> to <span class="emphasis"><em>true</em></span>
+        and verify that the behavior is the same as before when you send new
+        messages: they will be redelivered three times and then forwarded to
+        the dead letter queue.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e3531"></a>6.3.2.3.&nbsp;Step 5: Cause an error after processing the message</h4></div></div></div><p>Reset the <span class="emphasis"><em>CauseErrorAfterReceiving</em></span> flag to
+        <span class="emphasis"><em>false</em></span> again and now set the
+        <span class="emphasis"><em>CauseErrorAfterProcessing</em></span> flag to
+        <span class="emphasis"><em>true</em></span>. Remember that this previously caused the
+        redelivered messages to be processed over and over again. This time,
+        you should see once-and-once-only delivery. Run the
+        <code class="classname">StartSender</code> application again and verify that
+        no new confirmations were added to the database this time.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e3551"></a>6.3.2.4.&nbsp;Step 6: Cause an error after sending the confirmation
+        message</h4></div></div></div><p>Reset the <span class="emphasis"><em>CauseErrorAfterProcessing</em></span> flag to
+        <span class="emphasis"><em>false</em></span> again and now set the
+        <span class="emphasis"><em>CauseErrorAfterSending</em></span> flag to
+        <span class="emphasis"><em>true</em></span>. Remember that this previously caused the
+        JDBC transaction to commit, effectively ignoring the error, while the
+        JMS transaction rolled back, just like with
+        <span class="emphasis"><em>CauseErrorAfterProcessing</em></span>. Send new messages
+        again, and verify that this time both transactional resources are
+        rolled back.</p><p>When you're done with this last step, you have successfully
+        completed the lab!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="jms-tx-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="si-intro-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;5.&nbsp;jms-tx: Add Transactional Capabilities to the JMS Interaction&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;7.&nbsp;si-intro: Refactoring from JMS to Spring Integration</td></tr></table></div></body></html>

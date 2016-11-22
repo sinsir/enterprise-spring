@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:int="http://www.springframework.org/schema/integration" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/integration
+            http://www.springframework.org/schema/integration/spring-integration.xsd">
+
+	<int:channel id="dinings" />
+
+	<int:chain input-channel="dinings" output-channel="confirmations">
+		<int:service-activator ref="alreadyRewardedConfirmer" />
+		<int:service-activator ref="rewardNetwork" method="rewardAccountFor" />
+	</int:chain>
+
+	<bean id="alreadyRewardedConfirmer" class="rewards.messaging.AlreadyRewardedConfirmer">
+		<constructor-arg ref="rewardRepository" />
+		<constructor-arg ref="confirmationProcessor" />
+	</bean>
+
+	<int:gateway service-interface="rewards.messaging.ConfirmationProcessor"
+		id="confirmationProcessor" default-request-channel="confirmations" />
+
+	<int:channel id="confirmations">
+		<int:queue capacity="10" />
+	</int:channel>
+
+</beans>

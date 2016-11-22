@@ -1,0 +1,176 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;10.&nbsp;batch-intro: Introduction to Spring Batch</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="si-advanced-lab.html" title="Chapter&nbsp;9.&nbsp;si-advanced: Splitter and File System Integration"><link rel="next" href="batch-restart-recovery-lab.html" title="Chapter&nbsp;11.&nbsp;batch-restart-recovery: Spring Batch Restart and Recovery"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="batch-intro-lab"></a>Chapter&nbsp;10.&nbsp;batch-intro: Introduction to Spring Batch</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="batch-intro-lab-introduction"></a>10.1.&nbsp;Introduction</h2></div></div></div><p>
+In this lab you will gain experience with using Spring Batch to define and run batch jobs. You'll define the job itself, consisting of two distinct steps, and will implement the code to receive and send JMS Messages and to update and query the database.
+ </p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>Defining a job using the Spring Batch namespace</p></li><li><p>Implementing <span class="emphasis"><em>ItemReaders</em></span> and <span class="emphasis"><em>ItemWriters</em></span> that contain the batch's logic</p></li><li><p>Using JDBC batched statements through the <span class="emphasis"><em>JdbcTemplate</em></span></p></li><li><p>Running a batch job with a launcher</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Spring Batch</p></li><li><p>Spring's <span class="emphasis"><em>JmsTemplate</em></span></p></li><li><p>Spring's <span class="emphasis"><em>JdbcTemplate</em></span></p></li></ol></div><p>
+Estimated time to complete: 60 minutes
+ </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="batch-intro-lab-instructions"></a>10.2.&nbsp;Instructions</h2></div></div></div><p>
+The instructions for this lab are organized into sections. In the first section, you'll define a batch job and implement the first step of the job: processing incoming confirmation messages by updating the dinings in the database. In the second section, you'll implement the second step: sending new dining request messages for each dining that has not yet been confirmed.
+ </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e4892"></a>10.2.1.&nbsp;Use Case</h3></div></div></div><p>
+Before we start with writing the lab code, we'll first provide you with a bit of context. 
+The Credit Card Processor (CCP) sends many Dining requests to the Reward Network. However, depending on the communication mechanism that's used and the implementation of the Reward Network itself, not all requests will be received and processed successfully by the Reward Network application. For requests that have been processed successfully, the Reward Network sends back confirmations to the CCP.
+  </p><p>
+Once a day, the CCP processes all these confirmations and updates its database that holds the requests that have been sent to mark them as confirmed. The requests that are still marked as unconfirmed in the database are then sent again. This way, we can guarantee that a request will eventually be processed. Notice that the Reward Network will automatically ignore requests it has already processed (it's <span class="emphasis"><em>idempotent</em></span>), so it's safe for the CCP to simply resend a request for which no confirmation was received.
+Processing all of the confirmations and resending all the unconfirmed requests could interfere with the regular real-time operations, so it's performed once a day by a batch job that runs during the night.
+  </p><p>
+An overview of the complete job can be found in the following diagram:
+  </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="95%"><tr><td><img src="images/batch-job.png" width="100%"></td></tr></table></div><p></p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e4908"></a>10.2.2.&nbsp;Implementing the First Step and Defining the Job</h3></div></div></div><p>
+In this section you'll implement the first step of the batch job: processing confirmation messages from a queue by updating the corresponding 
+dinings in the database. As can be seen in the diagram, this involves creating an <span class="emphasis"><em>ItemReader</em></span> that receives JMS Messages 
+and an <span class="emphasis"><em>ItemWriter</em></span> that updates the database based on the received confirmations. You'll then start the job definition 
+using this first step.
+  </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4919"></a>10.2.2.1.&nbsp;Step 1: Define the <span class="emphasis"><em>confirmationReader</em></span></h4></div></div></div><p>
+The first step starts with receiving incoming JMS Messages. These messages contain Confirmation objects, each containing the dining ID to be updated.
+</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+Because we're implementing an offline batch-process and not a real-time system, we can simply pull these messages of the queue synchronously ourselves, instead of using a Spring <span class="emphasis"><em>MessageListenerContainer</em></span> that listens for incoming messages and then calls our application. That means Spring's <span class="emphasis"><em>JmsTemplate</em></span> is fine for our purposes.
+   </p></td></tr></table></div><p>
+<span class="emphasis"><em>TODO 01</em></span>:  Open <span class="emphasis"><em>batch-processors-config.xml</em></span> and define a <span class="emphasis"><em>JmsItemReader</em></span>. Give this bean the ID 
+<span class="emphasis"><em>confirmationReader</em></span> (you can use any ID, but this ID will be referred to in a later step). JmsItemReaders use JmsTemplates 
+to read from JMS, so we will need to provide one for it to use. We've already configured such a JmsTemplate for you named 
+<span class="emphasis"><em>receivingJmsTemplate</em></span>. If you want, you can examine how this template is configured by finding this bean 
+definition within the <span class="emphasis"><em>jms-ccp-config.xml</em></span> file. It is setup to read <span class="emphasis"><em>confirmation.queue</em></span>, 
+which is the queue in which our test data will be populated when we run our test below.
+</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>If the JMS messages contained XML, we would probably unmarshal them first into Confirmation objects. 
+This can be done by the JmsTemplate used to read the queue by using a MarshallingMessageConverter.</p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e4961"></a>10.2.2.2.&nbsp;Step 2: Define the <span class="emphasis"><em>ConfirmationUpdater</em></span></h4></div></div></div><p>
+The Spring Batch framework will call our <span class="emphasis"><em>confirmationReader</em></span> a specified number of times and collect the results in a <span class="emphasis"><em>List</em></span>. It then passes this list to an <span class="emphasis"><em>ItemWriter</em></span> that can then process them, for example by updating data in a database. This is exactly what you need to do: inside the T_DINING table, each dining that has been confirmed should have "1" in the CONFIRMED column. Fortunately, Spring Batch already provides a special item writer that performs JDBC batched updates against a database. We will configure this off-the-shelf component to update the T_DINING table for us.
+   </p><p>
+<span class="emphasis"><em>TODO 02</em></span>:  Within <span class="emphasis"><em>batch-processors-config.xml</em></span>, define a <code class="classname">JdbcBatchItemWriter</code>. Give this bean the ID <span class="emphasis"><em>confirmationUpdater</em></span>. 
+To perform JDBC batched updates, this bean will need a dataSource set, and also the actual SQL statement to be executed. 
+For the SQL statement provide <span class="emphasis"><em>update T_DINING set CONFIRMED=1 where ID=?</em></span>. 
+This statement will set a flag on the database for any row that matches the dining ID (which is exactly what our Confirmation object provides).   
+  </p><p>
+The <code class="classname">JdbcBatchItemWriter</code> also requires a way to set the placeholders (? symbols) within our SQL statement. 
+To do this, set the <span class="emphasis"><em>itemPreparedStatementSetter</em></span> property to reference the bean <span class="emphasis"><em>confirmationPreparedStatementPreparer</em></span> 
+defined later in the file.  This bean will be explained next.   
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5005"></a>10.2.2.3.&nbsp;Step 3: Understand the PreparedStatementPreparer</h4></div></div></div><p>
+<span class="emphasis"><em>TODO 03</em></span>:  All ItemWriters in Spring Batch receive a List of items to process. 
+In our case, we wish to perform a single JDBC batch update rather than sending separate update statements to the database. 
+JDBC batch updating is much more efficient than repeating single updates. 
+(Full understanding of JDBC batching operations is outside the scope of this exercise. 
+For further information consult Java's JDBC documentation.)
+   </p><p>
+To issue a batch update, the PreparedStatement used by the <code class="classname">JdbcBatchItemWriter</code> needs to prepared once for each item in the List (chunk). 
+The <code class="classname">JdbcBatchItemReader</code> does this by delegating to an object that we provide, an object coded with understanding of the structure of the SQL statement and how it relates to the incoming item. 
+We have provided an object that does this for you and defined it as a bean with id <code class="classname">confirmationPreparedStatementPreparer</code>.
+   </p><p>
+First examine the SQL statement that we have provided. 
+There is a single placeholder (? symbol) that needs to be 'prepared' with the ID (the confirmation's transaction ID) for each item (Confirmation) in the List.
+   </p><p>
+Next, open and examine the <code class="classname">ConfirmationPreparedStatementPreparer</code> class. 
+First, note that this class implements <code class="classname">ItemPreparedStatementStetter</code> and it is typed to Confirmation. 
+Next, note the <span class="emphasis"><em>setValues</em></span> method; this method is called by the <code class="classname">JdbcBatchItemWriter</code> for each item in the batch, passing the Confirmation with the PreparedStatement to be set. 
+Our SQL statement has only a single parameter to be set, so a single setString() call on the PreparedStatement is used to establish the value as the transactionID for the Confirmation object passed. 
+Note that this code is called once for each Confirmation in the List (chunk), so in our lab there will be 150 updates in each chunk.   
+   </p><p>
+<span class="emphasis"><em>TODO 04</em></span>:  When you have added the two bean definitions, run the <code class="classname">ConfirmationIntegrationTests</code> and make sure that it passes. When it does, move on with the next step to start to define our batch job!
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5048"></a>10.2.2.4.&nbsp;Step 4: start the definition of the batch job</h4></div></div></div><p>
+Spring Batch has its own domain language for batch-related concepts with a dedicated namespace that allows you to define your jobs using that language directly, instead of through generic <span class="emphasis"><em>&lt;bean&gt;</em></span> definitions.
+   </p><p>
+<span class="emphasis"><em>TODO 05</em></span>:  Open the <span class="emphasis"><em>batch-job-config.xml</em></span> in the <span class="emphasis"><em>src/main/resources</em></span> source folder. 
+Notice how the default namespace is set to the batch namespace URI. 
+That means you don't have to prefix your batch-related elements and you have full code completion support.
+   </p><p>
+Define a <span class="emphasis"><em>job</em></span> with id <span class="emphasis"><em>resendUnprocessedDiningsJob</em></span>.
+ Inside of that job, define a <span class="emphasis"><em>step</em></span> with id <span class="emphasis"><em>processConfirmationsStep</em></span>. 
+ This is going to be the first step of our two-step job. 
+ Inside the <span class="emphasis"><em>step</em></span> element, create <span class="emphasis"><em>tasklet</em></span> with a <span class="emphasis"><em>chunk</em></span> child element. 
+ This syntax allows you to easily configure the typical case of a step that consists of reading, (optionally) processing and writing some data.  
+   </p><p>
+This <span class="emphasis"><em>chunk</em></span> requires four arguments to be set: 
+<span class="emphasis"><em>reader</em></span> and <span class="emphasis"><em>writer</em></span> need to refer to the names of the beans you just defined for the <span class="emphasis"><em>confirmationReader</em></span> and <span class="emphasis"><em>ConfirmationUpdater</em></span>, respectively. 
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+You can use code assist (Ctrl + Space) to complete the names of the beans for your reader and writer defined in the other XML file!
+	   </p></td></tr></table></div><p>
+<span class="emphasis"><em>commit-interval</em></span> needs to be set to the chunk size we want to use. 
+In your case, that value is defined in an external properties file, <span class="emphasis"><em>batch.properties</em></span>, which is read by a <span class="emphasis"><em>PropertyPlaceholderConfigurer</em></span> already defined in the <span class="emphasis"><em>batch-processors-config.xml</em></span> you edited in the previous step. 
+That means you can simply use <span class="emphasis"><em>${chunk.size</em></span>} as the value.
+   </p><p>
+ Finally, set the attribute <span class="emphasis"><em>reader-transactional-queue</em></span> to <span class="emphasis"><em>true</em></span>.  
+ Transactional readers will be explained more fully in the next chapter, but the short explanation is that Spring Batch will understand
+ that our reader obtains input from a transactional source that will be rolled-back should an error occur 
+ (as opposed to a non-transactional source, like a file, that does not exhibit transactional behavior).  This affects its behavior
+ during "retry" scenarios, but since this exercise will only deal with non-failure scenarios this setting is not critical for us.
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5135"></a>10.2.2.5.&nbsp;Step 5: test the job you have defined</h4></div></div></div><p>
+<span class="emphasis"><em>TODO 06</em></span>:  We have created a simple integration test for your job already. Open the
+ <span class="emphasis"><em>BatchTests</em></span> class and implement the test logic.  
+ First, use the provided <span class="emphasis"><em>JobLauncherTestUtils</em></span> to run your job: 
+ its <code class="methodname">launchJob()</code> method will automatically create unique job parameters, which are used to identify multiple runs of the same job.
+ This guarantees that every test run starts a new job execution. 
+   </p><p>
+The <code class="methodname">launchJob()</code> method will block until the entire batch job is complete, which is fine for our test scenario.
+After the job completes, assert that the <span class="emphasis"><em>ExitStatus</em></span> of the returned <span class="emphasis"><em>JobExecution</em></span> is <span class="emphasis"><em>ExitStatus.COMPLETED</em></span>. 
+Also use the provided <span class="emphasis"><em>JdbcTemplate</em></span> to query the database table for the number of <span class="emphasis"><em>confirmed</em></span> rows.
+(You can use <span class="emphasis"><em>queryForObject(String sql, Integer.class)</em></span> for this, the query is defined in the <span class="emphasis"><em>NR_OF_CONFIRMED_DININGS</em></span> variable).
+Assert that 150 rows are effected, which is the number of confirmation messages that are present on the confirmation queue when you start the test. 
+This demonstrates that you've successfully updated the rows in the database based on the incoming messages.
+   </p><p>
+Run the test and make sure it passes. 
+If your test fails but you don't see any error, try setting the log level for <span class="emphasis"><em>org.springframework.batch</em></span> to <span class="emphasis"><em>debug</em></span> in the
+<span class="emphasis"><em>log4j.xml</em></span>: Spring Batch might swallow exceptions from your reader or writer
+that it doesn't consider severe enough to fail the step; you will only see these exceptions using the debug log level.  
+   </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e5189"></a>10.2.3.&nbsp;Implementing the Second Step</h3></div></div></div><p>
+Since the first step has marked all of the dinings in the database that are confirmed, the second step can create new dining requests for those remaining unconfirmed.
+We can safely send those requests to the server again, as the server will make sure not to process two requests with the same transaction id twice (it's <span class="emphasis"><em>idempotent</em></span>). 
+  </p><p>
+Just like with the first step, this involves implementing an item reader and writer. 
+As before, we will try to use off-the-shelf <span class="emphasis"><em>ItemReader</em></span>s and <span class="emphasis"><em>ItemWriter</em></span>s to eliminate coding whenever possible.
+Our second step will read from the database (JDBC Reader) and write to JMS (JMS Writer).
+  </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5205"></a>10.2.3.1.&nbsp;Step 6: finish the definition of the <span class="emphasis"><em>unconfirmedDiningsReader</em></span></h4></div></div></div><p>
+Reading records from a database using a query as input for a batch step is very common: so common in fact, that we don't need to implement a custom <span class="emphasis"><em>ItemReader</em></span> to do it. 
+We can reuse an existing reader implementation provided by the Batch framework. 
+There are several options, including a reader that scrolls through an open <span class="emphasis"><em>ResultSet</em></span> and one that uses <span class="emphasis"><em>pagination</em></span> to get the data we need in chunks. 
+For this lab we have chosen the latter.
+   </p><p>
+<span class="emphasis"><em>TODO 07</em></span>:  Open the <span class="emphasis"><em>batch-processors-config.xml</em></span> file again. 
+Finish the bean definition for the <span class="emphasis"><em>unconfirmedDiningsReader</em></span> by setting the <span class="emphasis"><em>queryProvider</em></span> property using an inner bean of type <span class="emphasis"><em>SqlPagingQueryProviderFactoryBean</em></span>. 
+Refer back to the slides for an example.  You will need to set separate properties for selectClause, fromClause, whereClause, and sortKey as well as the dataSource.  For the selectClause you can select all columns using "select *"
+and the from clause can simply indicate the T_DINING table by indicating "from T_DINING".  For the where clause, we want to select all Dining rows that are NOT confirmed so look for the confirmed flag set to 0: 
+"where CONFIRMED=0".  Finally, the sortKey must be a unique value to sort the SQL result set by so that distinct queries can be created, and we have such a column in "ID".   </p><p>
+This <span class="emphasis"><em>FactoryBean</em></span> will determine the DBMS type being used and will assemble SQL queries that use pagination. 
+You'll need to inject five properties. 
+The first one, <span class="emphasis"><em>dataSource</em></span>, needs to refer to the existing <span class="emphasis"><em>dataSource</em></span> bean. 
+This identifies the <span class="emphasis"><em>type</em></span> of DBMS being used. 
+   </p><p>
+The other four are related to the SQL query you want to run:
+</p><div class="orderedlist"><ol type="1"><li><p><span class="emphasis"><em>selectClause</em></span>, which is the SELECT part of your query (everything before the FROM)</p></li><li><p><span class="emphasis"><em>fromClause</em></span>, which is the FROM <span class="emphasis"><em>tablename</em></span> part of your query</p></li><li><p><span class="emphasis"><em>whereClause</em></span>, which is the WHERE <span class="emphasis"><em>someColumn</em></span> = <span class="emphasis"><em>someValue</em></span> part of your query</p></li><li><p><span class="emphasis"><em>sortKey</em></span>. The column(s) to sort on. Your SQL query might not sort yet, but to do pagination we need to sort on a column to get repeatable results. You can simply use ID here, as the test data contains incrementally numbered transaction IDs</p></li></ol></div><p>
+This SQL query will select all columns of the T_DINING table that have their CONFIRMED column set to <span class="emphasis"><em>0</em></span>.  The reader will execute this
+query repeatedly, for a distinct "page" of data at a time, until there is no more data.
+   </p><p>
+<span class="emphasis"><em>TODO 08</em></span>: But how does the <span class="emphasis"><em>JdbcPagingItemReader</em></span> know how to map each row to an instance of <span class="emphasis"><em>Dining</em></span>? 
+For that we must provide a <span class="emphasis"><em>RowMapper</em></span>, just as we would if using a <span class="emphasis"><em>JdbcTemplate</em></span>. 
+An implementation has been provided for you already: examine the <span class="emphasis"><em>DiningMapper</em></span> class to see how it works. 
+This is simple, boring code to write, so we've provided it for you already. 
+Finish by configuring the <span class="emphasis"><em>rowMapper</em></span> property of the <span class="emphasis"><em>unconfirmedDiningsReader</em></span> by injecting it with an instance of <code class="classname">DiningMapper</code>.
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+It's easy to use an <span class="emphasis"><em>inner bean</em></span> for this again.  Do this by instantiating the <code class="classname">DiningMapper</code> within the <span class="emphasis"><em>rowMapper</em></span> property tag.
+		 </p></td></tr></table></div><p>
+<span class="emphasis"><em>TODO 09</em></span>:  When you're done, run the <code class="classname">UnconfirmedDiningsReaderTests</code>, it should pass. When it does, move on to the next step. 
+	 </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5338"></a>10.2.3.2.&nbsp;Step 7: create the definition of the <span class="emphasis"><em>requestSender</em></span></h4></div></div></div><p>
+<span class="emphasis"><em>TODO 10</em></span>:  The <code class="classname">Dining</code> items read in the last step need to be sent to a JMS queue for processing through the Reward Network.
+ Create a bean called <span class="emphasis"><em>requestSender</em></span> of type <code class="classname">JmsItemWriter</code> that takes care of the sending. 
+ It needs its <span class="emphasis"><em>jmsTemplate</em></span> set with a <span class="emphasis"><em>JmsTemplate</em></span> that has a default destination or destination name configured. 
+ You can use the existing <span class="emphasis"><em>sendingJmsTemplate</em></span> defined in <span class="emphasis"><em>jms-ccp-config.xml</em></span>.
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5369"></a>10.2.3.3.&nbsp;Step 8: create the second step definition for the job</h4></div></div></div><p>
+<span class="emphasis"><em>TODO 11</em></span>:  Return to <span class="emphasis"><em>batch-job-config.xml</em></span> and add a second step called "<span class="emphasis"><em>sendUnprocessedDiningsStep</em></span>" with a tasklet and chunk.  
+Use the correct names for the new reader and writer and don't include the <span class="emphasis"><em>reader-transactional-queue</em></span> attribute for this <span class="emphasis"><em>&lt;chunk&gt;</em></span>.  
+Set the <span class="emphasis"><em>chunk-interval</em></span> attribute as you did before. 
+   </p><p>
+Also, set the <span class="emphasis"><em>next</em></span> attribute of the first step to the id of this second step to make sure the new step is executed after the first one!  
+Spring Batch requires you to be explicit about the step ordering and doesn't assume sequence based on the position in the job.  
+We will see the reason later; Spring Batch allows steps to be run in parallel.
+   </p><p>
+When you've done this, the job definition is complete. 
+If you would like to see a graphical representation of all the components, go to the Spring Explorer View. 
+Open the <code class="literal">batch-intro</code> project and navigate to the <span class="emphasis"><em>system-test-config.xml</em></span> file. 
+Right-click it and select Open Graph. 
+The result should look like this:
+   </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="95%"><tr><td><img src="images/batch-graph.jpg" width="100%"></td></tr></table></div><p>
+If your job looks good, now let's test it to see if it works!
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5410"></a>10.2.3.4.&nbsp;Step 9: finish the <span class="emphasis"><em>BatchTests</em></span> and run it</h4></div></div></div><p>
+<span class="emphasis"><em>TODO 12</em></span>:  Return to the <span class="emphasis"><em>BatchTests</em></span> class again and implement a check that there were really 150 messages sent.
+To make this easier, we have provided a <span class="emphasis"><em>QueueViewMBean</em></span> which has a <code class="methodname">getQueueSize()</code> method. 
+We're using a little trick here: ActiveMQ defines a JMX MBean for each queue that will let you check some attributes and perform some operations. 
+We've used Spring's JMX support to obtain a reference to the MBean for the dining queue: you can see how this is done in the <span class="emphasis"><em>system-test-config.xml</em></span> configuration file. 
+   </p><p>
+Run the test and make sure it passes. When it does, you have successfully completed this lab!
+   </p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="si-advanced-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="batch-restart-recovery-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;9.&nbsp;si-advanced: Splitter and File System Integration&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;11.&nbsp;batch-restart-recovery: Spring Batch Restart and Recovery</td></tr></table></div></body></html>

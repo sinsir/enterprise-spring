@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- This file defines the rewardNetwork bean we want to export: -->
+	<import resource="classpath:/app-config.xml"/>
+	
+	<import resource="classpath:/db-config.xml"/>
+
+	<!-- 
+		 TODO 01: Execute the following tasks:
+		 
+		 1. Define a bean of type RmiServiceExporter. 
+		 	At minimum set the service, serviceInterface, and name properties.
+			Optionally set 'alwaysCreateRegistry' to 'true' to avoid the time-consuming registry lookup.
+				  	 
+		 2. Start the server-side RMI endpoint, RmiExporterBootstrap class. 
+	-->
+
+
+	<!-- A transaction manager for working with connections from the given DataSource -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+</beans>

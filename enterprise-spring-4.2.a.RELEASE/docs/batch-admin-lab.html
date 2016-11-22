@@ -1,0 +1,170 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;12.&nbsp;batch-admin: Spring Batch Admin</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="batch-restart-recovery-lab.html" title="Chapter&nbsp;11.&nbsp;batch-restart-recovery: Spring Batch Restart and Recovery"><link rel="next" href="xd-intro-lab.html" title="Chapter&nbsp;13.&nbsp;Introduction to Spring XD"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="batch-admin-lab"></a>Chapter&nbsp;12.&nbsp;batch-admin: Spring Batch Admin</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="batch-admin-lab-introduction"></a>12.1.&nbsp;Introduction</h2></div></div></div><p>
+    In this lab you'll see how Spring Batch Admin provides a UI to launch, manage and inquire status
+    of batch jobs. You will also see how you can partition input data to improve batch throughput.
+  </p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>Starting, stopping, and restarting batch jobs using Batch Admin</p></li><li><p>Examining the status of running and completed jobs with batch admin</p></li><li><p>Configuring a job for parallel execution using partitioning</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>The Batch Admin UI</p></li><li><p>Implementing a partitioned job</p></li></ol></div><p>
+    Estimated time to complete: 45 minutes
+  </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="batch-admin-lab-instructions"></a>12.2.&nbsp;Instructions</h2></div></div></div><p>
+The instructions for this lab are organized into sections.
+ </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e6128"></a>12.2.1.&nbsp;Exploring the Batch Admin UI</h3></div></div></div><p>
+    The <code class="literal">batch-admin</code> lab consists of the Batch Admin sample UI application, with a version of the 
+    <code class="literal">diningRequestsJob</code> job from the <code class="literal">batch-restart-recovery</code> lab deployed.
+  </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6142"></a>12.2.1.1.&nbsp;Step 1: Deploy the Project and Explore the UI</h4></div></div></div><p>
+     (<code class="literal">TODO 01</code>):  Right click the <code class="literal">batch-admin</code> project and select Run As...-&gt;Run on Server. 
+     STS will open a  browser view containing the home page; use that view or a stand-alone browser with URL
+     <a href="http://localhost:8080/batch-admin" target="_top">http://localhost:8080/batch-admin/</a> 
+     to explore the UI.
+   </p><p>
+     Select Jobs; you should see a page showing the diningRequestsJob; click the job name. In the 
+     Job Parameters field, enter <code class="literal">input.resource.path=diningRequests.csv</code>; click 
+     <code class="literal">Launch</code>.
+   </p><p>
+     Drill down to the Step Execution details (use the slides for reference); you should see that 
+     the job executed 181 reads and writes, like this:
+   </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="60%"><tr><td><img src="images/step-details.png" width="100%"></td></tr></table></div><p>
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6171"></a>12.2.1.2.&nbsp;Step 2: Explore the Batch Admin Project Structure</h4></div></div></div><p>
+     (<code class="literal">TODO 02</code>):  The Batch Admin Sample UI application loads each job in a separate application context, to 
+     avoid clashes between bean names etc. Each batch job is placed in a separate config file
+     under src/main/resources/META-INF/spring/batch/jobs. Take a look at the job file there; 
+     notice that we have added an <code class="literal">incrementer</code> to the job. Take a look at
+     the implementation of that incrementer. This allows us to submit multiple executions of 
+     the same job, with the same job parameters, without Spring Batch attempting to restart 
+     a previous job instance.
+   </p><p>
+     Also notice the src/main/resources/META-INF/override folder. Beans declared in files in this
+     folder override those in the batch admin jars. 
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6184"></a>12.2.1.3.&nbsp;Step 3: Add Test Failure to Writer</h4></div></div></div><p>
+     (<code class="literal">TODO 03 - TODO 04</code>):  Open the <code class="classname">ReportWriter</code> class and expose the writer as an MBean and expose the 
+     <code class="literal">failOnConfirmationNumber</code> as an MBean Attribute.
+   </p><p>
+     Stop Tomcat and restart it with JMX enabled.
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: Connecting using JConsole"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Connecting using JConsole</th></tr><tr><td align="left" valign="top"><p>
+      Either in the launch configuration for Tomcat, or by setting it as a default 
+      in the 'Installed JREs' under Window | Preferences, you need to set the following VM argument
+      </p><pre class="programlisting">-Dcom.sun.management.jmxremote</pre><p>  
+      If you are unfamiliar with how to do this, ask your instructor.
+    </p></td></tr></table></div><p>
+     Now, open a windows command prompt (<span class="emphasis"><em>Start-&gt;Run-&gt;'cmd'</em></span>), and type
+   </p><pre class="programlisting">
+     C:\&gt; jconsole
+   </pre><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+     JConsole is the default JMX console that ships with Java, versions 5.0 and greater. 
+     It's located in the <span class="emphasis"><em>bin</em></span> directory of the JDK home: if that's not on your 
+     path, then 'cd' into that directory first!
+    </p><p>
+     You may find it more convenient to double click jconsole.exe in the bin directory.
+    </p></td></tr></table></div><p>
+     When the JConsole connection dialog appears, select the <span class="emphasis"><em>org.apache.catalina.startup.Bootstrap</em></span>
+     process and click 'Connect'.  After a few moments, you'll be presented with the following screen.
+   </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="50%"><tr><td><img src="images/jconsole-connect.png" width="100%"></td></tr></table></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+      If you cannot see the catalina process in JConsole (in the 'Local Process' section) or 
+      the connect times out, it is possible you do not have adequate security rights in your 
+      environment. In this case, you will have to connect to the process via a socket connection
+      instead. In the VM arguments tab of your launch configuration, add the following arguments:
+    </p><pre class="programlisting">
+      -Dcom.sun.management.jmxremote.port=8181
+      -Dcom.sun.management.jmxremote.authenticate=false
+      -Dcom.sun.management.jmxremote.ssl=false
+    </pre><p>
+      Then restart Tomcat, and connect via JConsole by using the 'Remote Process' selection, 
+      specifying a host of <span class="emphasis"><em>localhost</em></span> and port of <span class="emphasis"><em>8181</em></span>.
+    </p></td></tr></table></div><p>
+     Navigate to the MBeans tab and open 'spring.application'; navigate to the FailOnConfirmationNumber
+     attribute, shown here.
+   </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="50%"><tr><td><img src="images/jconsole-fail.png" width="100%"></td></tr></table></div><p>
+     Set the attribute to, say, 55, and click Refresh to confirm.
+   </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6251"></a>12.2.1.4.&nbsp;Step 4: Fail and Recover the Job</h4></div></div></div><p>
+     Return to the browser and start a new execution of the job.
+   </p><p>
+     Navigate to the step execution details as before and note that the job failed to complete
+     and look at the number of rows processed.
+   </p><p>
+     Return to JConsole and reset the attribute to at least 200.
+   </p><p>
+     Return to the browser, navigate to the page for the failed execution and restart the job.
+   </p><p>
+     Navigate to the step execution results and see that the remaining rows were processed.
+   </p><p>
+     Congratulations! You have successfully tested job restart and recovery.
+   </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e6266"></a>12.2.2.&nbsp;Stopping and Restarting a Batch Job</h3></div></div></div><p>
+    In this section you will see how we can manually stop a batch job, and restart it from 
+    where it was stopped.
+  </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6271"></a>12.2.2.1.&nbsp;Step 5: Slowing Down the Job</h4></div></div></div><p>
+    Our test batch job completes very quickly. Here we will introduce a pause so the job takes
+    several minutes to complete.
+   </p><p>
+    (<code class="literal">TODO 05</code>):  Open the ReportWriter and introduce a delay, simulating
+    that it takes 1 second to process each item.
+   </p><p>
+    Redeploy the project using Run As...-&gt;Run on Server...
+   </p><p>
+    Navigate to the Job and launch it, again with job parameter 'input.resource.path=diningRequests.csv'.
+   </p><p>
+    In the browser, navigate to the step execution and note that the job is progressing (slowly). 
+   </p><p>
+    Navigate to the job execution and stop the job. Navigate to the step execution; confirm the 
+    step and job are stopped and observe how many items were processed. 
+   </p><p>
+    Navigate to the job execution and click the 'Restart' button. Allow the job to complete and observe
+    that the total items processed is 181 for the job instance (across both executions).
+   </p><p>
+     Congratulations! You have successfully stopped and restarted a job.
+   </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e6293"></a>12.2.3.&nbsp;Configuring a Partitioned Batch Job</h3></div></div></div><p>
+    In this section, you will gain experience configuring and running a partitioned batch job. The 
+    partitioning uses a simple <code class="classname">Partitioner</code> that finds the minimum and maximum
+    primary keys in a table to obtain a count of rows and then calculates the number of rows in the
+    partition.
+  </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+    This technique only works if the primary keys are uniformly distributed; a more sophisticated 
+    partitioning technique may be necessary for other situations.
+   </p></td></tr></table></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6304"></a>12.2.3.1.&nbsp;Step 6: Adding Additional Tables to the Schema</h4></div></div></div><p>
+     The job has several steps; the first step deletes all data from temporary tables; the second
+     step loads the data from the flat file into a temporary table (T_DINING_REQUEST); the third
+     step partitions the data and processes each partition, with the results being written to 
+     a temporary table that can be used later to generate a report.
+   </p><p>
+     (<code class="literal">TODO 06</code>):  Take a look in src/main/resources and open the file <code class="literal">partition-schema.sql</code>.
+     We need to add this script to the database initializer. Open 
+     <code class="literal">src/main/resources/META-INF/spring/batch/override/data-source-context.xml</code>
+     and include the additional schema script. 
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top">
+     Files in <code class="literal">src/main/resources</code> end up on the classpath in the war file.
+     Given this is the location of the schema file, no folders are needed when using the 
+     <code class="literal">classpath:</code> modifier in the <code class="literal">location</code> attribute.
+   </td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6331"></a>12.2.3.2.&nbsp;Step 7: Preparing the Partitioned Batch Job Configuration File</h4></div></div></div><p>
+     (<code class="literal">TODO 07</code>):  As mentioned above, Spring Batch Admin looks for job definitions under <code class="filename">META-INF/spring/batch/jobs</code>
+     on the classpath. A start for the partitioned job has been provided for you, under 
+     <code class="filename">src/main/resources</code>.
+   </p><p>
+     Move <code class="literal">partition-rewards-job-config.xml</code> from <code class="filename">src/main/resources</code> to 
+     <code class="filename">src/main/resources/META-INF/spring/batch/jobs</code> (alongside the existing 
+     <code class="literal">batch-job-config.xml</code>).
+   </p><p>
+     (<code class="literal">TODO 08</code>):  Review the <code class="classname">ColumnRangePartitioner</code> class; 
+     open the <code class="literal">partion-rewards-job-config.xml</code>
+     and complete the configuration for the <code class="classname">ColumnRangePartitioner</code>.
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+     Some of the information you need for this task is in the schema file you just added to
+     to the database initializer.
+    </p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e6376"></a>12.2.3.3.&nbsp;Step 8: Testing Partition Sizes</h4></div></div></div><p>
+    Redeploy the project on Tomcat; when the home page is displayed, select Jobs. You should now see a second
+    job <code class="literal">diningRequestsPartitionedJob</code>. Select that job and launch it with Job Parameters
+    <code class="literal">input.resource.path=diningRequests.csv</code>. 
+   </p><p>
+    Wait for the execution to complete; and drill down to the Step Executions. You should see something similar
+    to this:
+   </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="70%"><tr><td><img src="images/step-partitions.png" width="100%"></td></tr></table></div><p>
+    See that there are 5 partitions (4 of 37 rows and 1 of 33 for a total of 181 rows as before).
+   </p><p>
+    Make a note of the elapsed time of the <code class="literal">processDinings</code> step - the 'master' step
+    that ran the partitions.
+   </p><p>
+    (<code class="literal">TODO 09</code>):  Open the <code class="literal">partion-rewards-job-config.xml</code> file and find 
+    the <code class="literal">grid-size</code> attribute on the <code class="literal">processDinings</code> step. Change
+    the grid-size to, say, 10. Save, redeploy and re-run the test.
+   </p><p>
+    Drill down to the Step Executions and note the new elapsed time for the master step.
+   </p><p>
+    Congratulations! You have completed the lab.
+   </p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="batch-restart-recovery-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="xd-intro-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;11.&nbsp;batch-restart-recovery: Spring Batch Restart and Recovery&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;13.&nbsp;Introduction to Spring XD</td></tr></table></div></body></html>

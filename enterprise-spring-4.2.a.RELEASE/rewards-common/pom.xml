@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.springsource.training.eiws</groupId>
+	<artifactId>rewards-common</artifactId>
+	<version>4.2.a.RELEASE</version>
+	<packaging>jar</packaging>
+	<name>rewards-common</name>
+
+	<parent>
+		<groupId>com.springsource.training.eiws</groupId>
+		<artifactId>parentEiwsProject</artifactId>
+		<version>4.2.a.RELEASE</version>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.hibernate.javax.persistence</groupId>
+			<artifactId>hibernate-jpa-2.0-api</artifactId>
+		</dependency>
+	</dependencies>
+
+</project>

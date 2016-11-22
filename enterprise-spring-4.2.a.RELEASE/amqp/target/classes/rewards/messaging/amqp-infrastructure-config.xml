@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+
+	<!-- these beans provide a messaging infrastructure for the rewards network -->
+
+	<!-- rabbitConnectionFactory, to be used by RabbitTemplate beans -->
+	<bean id="rabbitConnectionFactory" class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory" />
+
+	<rabbit:admin connection-factory="rabbitConnectionFactory" />
+	
+	<rabbit:queue name="rewards.queue.dining" auto-delete="true" />
+	<rabbit:queue name="rewards.queue.confirmation" auto-delete="true" />
+	
+</beans>

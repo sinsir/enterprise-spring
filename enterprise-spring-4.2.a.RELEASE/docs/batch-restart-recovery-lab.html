@@ -1,0 +1,317 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;11.&nbsp;batch-restart-recovery: Spring Batch Restart and Recovery</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="batch-intro-lab.html" title="Chapter&nbsp;10.&nbsp;batch-intro: Introduction to Spring Batch"><link rel="next" href="batch-admin-lab.html" title="Chapter&nbsp;12.&nbsp;batch-admin: Spring Batch Admin"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="batch-restart-recovery-lab"></a>Chapter&nbsp;11.&nbsp;batch-restart-recovery: Spring Batch Restart and Recovery</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="batch-restart-recovery-lab-introduction"></a>11.1.&nbsp;Introduction</h2></div></div></div><p>
+            In this lab you'll see how Spring Batch allows dealing with errors during batch processing, both
+            by skipping invalid items and by allowing you to restart failed job instances where the job
+            resumes where it left off. 
+        </p><div class="orderedlist"><p class="title"><b>What you will learn:</b></p><ol type="1"><li><p>Configuring skipping and restarting</p></li><li><p>How Spring Batch keeps track of your job executions to allow resuming a jailed job instance</p></li><li><p>How to be informed of skipped input items</p></li><li><p>How to limit the amount of allowed restarts for a step</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you will gain experience with:</b></p><ol type="1"><li><p>Batch namespace support for skiping and restarting</p></li><li><p>Implementing a <code class="interfacename">SkipListener</code></p></li></ol></div><p>
+            Estimated time to complete: 45 minutes
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="batch-restart-recovery-lab-instructions"></a>11.2.&nbsp;Instructions</h2></div></div></div><p>
+            The instructions for this lab are organized into sections. 
+        </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e5478"></a>11.2.1.&nbsp;Completing the initial batch job</h3></div></div></div><p>
+                You're going to use a batch job that reads lines of dining information from a comma-separated
+                value file, calls our <code class="literal">RewardNetwork.rewardAccountFor()</code> method from an
+                <code class="interfacename">ItemProcessor</code>, and then writes a simple report to the Console.
+                The first thing to do is to complete the job definition.
+            </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5489"></a>11.2.1.1.&nbsp;Inspect the job configuration so far</h4></div></div></div><p>
+                    Start with the <code class="filename">batch-execution-config.xml</code> file in the
+                    <code class="filename">src/main/resources</code> folder. Here the job registry
+                    and repository are defined, as well as a simple job launcher and some other infra-level
+                    components. Like in the previous lab, the actual batch job is defined in a separate file.
+                    Open the <code class="filename">batch-job-config.xml</code> file. Notice that it includes the
+                    <code class="filename">app-config</code> from the common <code class="literal">rewards</code> project, which
+                    means that the <code class="literal">rewardNetwork</code> bean and its dependencies are available
+                    for the job. There's also the start of a reader and a simple bean for a writer, but you
+                    still have to define the actual batch job.
+                </p><p>
+                    If you look at the <code class="filename">db-config.xml</code> file, you'll notice that the
+                    application uses an embedded HSQLDB database that's stored on disk. Labs so far have only
+                    used in-memory databases, but in this lab you'll need to persist state between various
+                    runs.
+                </p><p>
+                    If you inspect the <code class="filename">integration-config.xml</code> file, you'll see that a
+                    simple file-based inbound channel adapter has been configured to watch a
+                    <code class="filename">spool</code> directory for <code class="literal">.csv</code> files, which are then
+                    picked up by a <code class="classname">DiningRequestsJobLauncher</code>. Open this class and see
+                    how it launches the injected job using the injected launcher by creating some
+                    <code class="classname">JobParameters</code> containing a resource path for the file that the
+                    Spring Integration adapter picked up from the spool directory.
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5534"></a>11.2.1.2.&nbsp;Define the job</h4></div></div></div><p>
+                    <code class="literal">TODO 01</code>:  Open <code class="filename">batch-job-config.xml</code> and
+                    define a job called <code class="literal">diningRequestsJob</code>. Give the job a step and in
+                    that step, configure a tasklet and a chunk. Let the chunk's reader attribute refer to
+                    the existing <code class="literal">diningRequestsReader</code> bean and its writer attribute to
+                    the <code class="literal">reportWriter</code>. Set its commit-interval to <code class="literal">10</code>.
+                </p><p>
+                    Although we could create a dedicated class that implements
+                    <code class="interfacename">ItemProcessor</code> and invokes the
+                    <code class="methodname">rewardAccountFor</code> method on the <code class="literal">rewardNetwork</code>
+                    bean, Spring Batch can actually generate that code for you. Inside the
+                    <code class="literal">&lt;chunk&gt;</code> element, add a
+                    <code class="literal">&lt;batch:processor&gt;</code> element. Provide it with a
+                    <code class="literal">&lt;ref&gt;</code> child element that refers to the
+                    <code class="literal">rewardNetwork</code> bean and an <code class="literal">adapter-method</code> attribute
+                    that refers to the <code class="methodname">rewardAccountFor</code> method. 
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5586"></a>11.2.1.3.&nbsp;Complete the item reader configuration</h4></div></div></div><p>
+                    <code class="literal">TODO 02</code>:  Although a start has been made with configuring the
+                    <code class="literal">diningRequestsReader</code> bean, it's not finished yet. Please complete
+                    it by setting the <code class="interfacename">Resource</code>
+                    from which the reader should read the input file from.  Since the reader shouldn't hard-code
+                    the path of its input file, we can use a SpEL expression to obtain the value of a job parameter 
+                    called <code class="literal">input.resource.path</code>.
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            The parameters map can be accessed using the <code class="literal">jobParameters</code>
+                            variable. You can access the value of a map entry in SpEL using the
+                            <code class="literal">map['some.key']</code> syntax for keys containing dots. 
+                        </p></td></tr></table></div><p>
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            When placing SpEL expressions within a value tag, you should enclose the expression
+                            within <code class="literal">#{ }</code> tags. 
+                        </p></td></tr></table></div><p>							
+                    Since this value is only available when the job is launched, give the reader bean a
+                    <code class="literal">step</code> scope! This means the expression will be evaluated when the step
+                    is being executed, so when the job parameters actually exist. 
+                </p><p>
+                    <code class="literal">TODO 03</code>: As you can see, the <code class="literal">diningRequestsReader</code> 
+                    is already configured to read a number of fields from each
+                    line of the field, and has even defined their names. 
+                    You'll have to write the code to convert the resulting
+                    <code class="interfacename">FieldSet</code> into an actual <code class="classname">Dining</code>
+                    instance. Modify the <code class="classname">DiningFieldSetMapper</code> class within the 
+                    <code class="literal">rewards.batch</code> package. Extract the fields from the
+                    <code class="interfacename">FieldSet</code> by name and use them to create and return a
+                    new <code class="classname">Dining</code> instance.
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            The <code class="classname">Dining</code> class provides a convenient static factory
+                            method that you can use.
+                        </p></td></tr></table></div><p>
+                    The date field uses the <code class="literal">yyyy-MM-dd</code> date format.
+                </p><p>
+                    Now switch back to the job config xml file and complete the <code class="literal">diningRequestsReader</code> by
+                    injecting an instance of the new <code class="classname">DiningFieldSetMapper</code> into the
+                    inner <code class="classname">DefaultLineMapper</code> bean.
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5670"></a>11.2.1.4.&nbsp;Test your work</h4></div></div></div><p>
+                    <code class="literal">TODO 04</code>: Open the <code class="classname">BatchTests</code> class in the
+                    <code class="literal">rewards.batch</code> package of the test source folder. This file contains
+                    a number of tests that are currently all marked with
+                    <code class="interfacename">@Ignored</code>. The test is autowired with a job launcher and
+                    the job you just defined. It uses an in-memory database, so it won't interfere with
+                    the application that you'll run later which stores its database on disk.
+                </p><p>
+                    Remove the <code class="interfacename">@Ignored</code> from the
+                    <code class="methodname">regularJobSucceedsWithValidInput</code> method and run the test. 
+                    Make sure that the test passes: if it doesn't, have a
+                    good look at the output and stacktraces in both your JUnit View as well as the Console
+                    to spot the cause of the error. If you cannot get the test to pass, ask your
+                    instructor for help. 
+                </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e5695"></a>11.2.2.&nbsp;Skipping in case of errors</h3></div></div></div><p>
+                In the real world, batch input isn't always under your control and can therefore contain
+                invalid data. Spring Batch allows you to deal with the resulting errors in various ways,
+                including <span class="emphasis"><em>skipping</em></span> it.
+            </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5703"></a>11.2.2.1.&nbsp;Test what happens with broken input</h4></div></div></div><p>
+                    <code class="literal">TODO 05</code>: You've now tested that your job works when its input is valid. But what happens if the
+                    input contains invalid items? To test that we've provided you with another input file
+                    that contains a single error. Open the <code class="filename">diningRequests-broken.csv</code>
+                    file and see if you can spot the line with the invalid input. Note its line number.
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            If you have Excel installed, then right-click the file and choose "Open With -&gt;
+                            Text Editor" to avoid opening the file in Excel!
+                        </p></td></tr></table></div><p>
+                </p><p>
+                    Now remove the <code class="interfacename">@Ignored</code> annotation from the
+                    <code class="methodname">regularJobFailsWithInvalidInput</code> method and run the tests
+                    again. Notice that the tests asserts the
+                    <code class="literal">FAILED</code> exit status for the job when the input is invalid. Check the
+                    console to see how Spring Batch reports the cause. The original exception is wrapped
+                    in a <code class="classname">FlatFileParseException</code> and this exception and its
+                    stacktrace are reported by the <code class="classname">FlatFileItemReader</code> and also the
+                    <code class="classname">AbstractStep</code>, ultimately causing the job to fail. 
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5738"></a>11.2.2.2.&nbsp;Define an error-skipping job</h4></div></div></div><p>
+                    <code class="literal">TODO 06</code>: Create another job definition by copying your existing one and 
+                    renaming the job to <code class="literal">skippingDiningRequestsJob</code>. Also change
+                    the step name, since the step id has to be unique across jobs. Now set the chunk's
+                    <code class="literal">skip-limit</code> attribute to <code class="literal">1</code> to indicate that we'll
+                    tolerate at most one error. To indicate which errors are considered skippable, add a
+                    <code class="literal">&lt;batch:skippable-exception-classes&gt;</code> child element to the
+                    chunk and include
+                    <code class="classname">org.springframework.batch.item.file.FlatFileParseException</code>.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+                            Use code assist (Ctrl+Space) inside the skippable-exception-classes element to see
+                            what's available. Also, note that we don't include the
+                            <code class="classname">IncorrectTokenCountException</code> even though that's the root
+                            cause: when Spring Batch determines if the exception is skippable it's already
+                            wrapped. 
+                        </p></td></tr></table></div><p>
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5768"></a>11.2.2.3.&nbsp;Test the skipping</h4></div></div></div><p>
+                    <code class="literal">TODO 07</code>: Switch back to the tests. 
+                    First add an <code class="interfacename">@Autowired</code> annotation to the 
+                    <code class="varname">skippingDiningRequestsJob</code> field to have both jobs
+                    injected.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+                            You might wonder why this works: both fields are of the same type, and Spring
+                            performs autowiring by type. Why won't it complain about the ambiguity of having
+                            two matching beans? Well, it turns out that Spring has added an extra mechanism
+                            for these type of cases: if the name of the dependency (the field, in this case)
+                            matches the name of one of the candidate beans then it will use that bean. Therefore,
+                            make sure that the names of the fields match the names you chose for your job ids!
+                        </p></td></tr></table></div><p>
+                    <code class="literal">TODO 08</code>:  Remove the @Ignore on the 
+                    <code class="methodname">skippingJobSucceedsWithInvalidInput</code> test and run the
+                    tests again. Note how this tests uses the same invalid input as the previous test, but
+                    checks for an exit state of COMPLETED instead of FAILED. Make sure all tests pass
+                    before you move on to the next step.
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5792"></a>11.2.2.4.&nbsp;Add a <code class="interfacename">SkipListener</code></h4></div></div></div><p>
+                    <code class="literal">TODO 09</code>: The last test showed that the job is now skipping the invalid input. 
+                    The <code class="classname">FlatFileItemReader</code> logs the
+                    <code class="classname">FlatFileParseException</code> as an error, but you might want to act
+                    on the skipping of an invalid item in your own code as well; for example, by writing
+                    the invalid item to a separate file. 
+                </p><p>
+                    In order to get a callback when skipping occurs,
+                    look at the <code class="classname">DiningSkipListener</code> class under the
+                    <code class="literal">rewards.batch</code> package. This class implements the
+                    <code class="interfacename">SkipListener</code> interface, but as we're only interested in
+                    one of the three methods that interface defines it's easiest to simply extend the
+                    <code class="classname">SkipListenerSupport</code> class provided by the framework.
+                    The type is annotated with <code class="literal">@SuppressWarnings("rawtypes")</code>: you can use 
+                    the raw type here, since the method you'll implement doesn't use the type information.
+                </p><p>
+                    Within the <code class="methodname">onSkipInRead</code> method it simply
+                    logs a warning using a Log4J logger that includes the message from the
+                    <code class="classname">Throwable</code> that gets passed. In a real-life application you
+                    could append the original line to a file, send a JMS message, an SNMP trap, or use a
+                    Spring Integration gateway to put a message on a channel for further consumption.
+                </p><p>
+                    Switch back to the job configuration and complete it by 
+                    configuring a <code class="literal">&lt;batch:listeners&gt;</code> element for the tasklet
+                    inside the step of the <code class="literal">skippingDiningRequestsJob</code> with a 
+                    <code class="literal">&lt;batch:listener&gt;</code> element that contains an inner bean of type
+                    <code class="classname">DiningSkipListener</code>.
+                    Then run your tests again and check the output in the Console View for your new log
+                    statement. 
+                </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e5847"></a>11.2.3.&nbsp;Restarting a failed job</h3></div></div></div><p>
+                Not all errors can simply be skipped and ignored: sometimes you simply want to stop the
+                batch job, report the error and have someone investigating the cause. If that person is
+                able to fix the issue (s)he might want to restart the job, starting from the point where
+                the input items weren't processed yet. Let's see how that would work for our job.
+            </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5852"></a>11.2.3.1.&nbsp;Start the batch job with invalid input</h4></div></div></div><p>
+                    Open the <code class="classname">rewards.batch.Bootstrap</code> class. This class starts an
+                    application context that includes the Spring Integration configuration you reviewed
+                    earlier. After that, it simply waits while the spool directory is being polled for new
+                    files until you press Enter in the Console View, after which it closes down. Closing
+                    down properly will ensure a clean shutdown of the database that we're using, so please
+                    use this method for all following steps where you want to stop the current
+                    application. Now start the application. 
+                </p><p>
+                    At this point, you won't see much output yet.
+                    Now copy the <code class="filename">diningRequests-broken.csv</code> file from the root of the
+                    project into the <code class="filename">spool</code> directory. This will trigger your batch
+                    job to run, and since this is the regular non-skipping job it will fail. Stop the
+                    application by pressing Enter in the Console View. Refresh the project and you'll see
+                    two new files, <code class="filename">rewardsdb.properties</code> and
+                    <code class="filename">rewardsdb.script</code>, that make up your new database.
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            If you want to start with a clean database again later, simply delete these two
+                            files.
+                        </p></td></tr></table></div><p>
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5878"></a>11.2.3.2.&nbsp;Inspect the database</h4></div></div></div><p>
+                    Let's see what Batch has written in the database so far. Right-click the
+                    <code class="filename">HSQLDB Manager.launch</code> file in the root of your project and select
+                    "Run As -&gt; HSQLDB Manager". You should now see the following application with all
+                    the database tables listed:
+                </p><div class="mediaobject"><table border="0" summary="manufactured viewport for HTML img" cellspacing="0" cellpadding="0" width="60%"><tr><td><img src="images/hsqldb-manager.png" width="100%"></td></tr></table></div><p>
+                    Perform a couple of "select * from <span class="emphasis"><em>tablename</em></span>" queries to inspect
+                    the contents of the database, in particular the <code class="literal">_EXECUTION</code> tables.
+                    Can you understand the numbers listed for the various COUNT columns in the
+                    <code class="literal">BATCH_STEP_EXECUTION</code> table?
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            Remember that the commit-interval is set to 10!
+                        </p></td></tr></table></div><p>
+                    When you're done, close the manager client and proceed with the next step.
+                </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5904"></a>11.2.3.3.&nbsp;Fix the error and restart the job</h4></div></div></div><p>
+                    Open the <code class="filename">diningRequests-broken.csv</code> file from the spool directory
+                    in the text editor and fix line 123 by removing the extra value at the end of the line.
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>
+                            Use Ctrl+L in Eclipse to quickly jump to a given line number
+                        </p></td></tr></table></div><p>
+                    Save the file and then restart the job by running the <code class="classname">Bootstrap</code>
+                    class again. Read the output in the Console: does the job indeed restart by only
+                    processing the items that weren't processed successfully yet?
+                </p><p>
+                    <code class="literal">TODO 10</code>:  When you think that restarting works OK, switch back to the tests and enable the
+                    <code class="methodname">restartRegularJobAfterFixingInputSucceeds</code> test
+                     and see what it does.  Run the tests and make sure they all pass.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>
+                            In order to test restarting with repaired input the test uses two different files.
+                            Since the filenames are part of the <code class="classname">JobParameters</code>, that
+                            would normally mean that Spring Batch would not consider the second launch to be a
+                            restart of an existing job instance, but the start of a new job instance instead.
+                            To fool the framework into thinking it's the same job instance we've used a little
+                            trick that hides the relevant parameter from the parameter map's key set. Don't
+                            worry too much about how it works, as long as you understand what we're testing
+                            here that's OK.
+                        </p></td></tr></table></div><p>
+                </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e5934"></a>11.2.4.&nbsp;Limiting the number of (re)starts allowed</h3></div></div></div><p>
+                The current jobs are allowed to be restarted as often as you like. In a real life
+                situation, you might want to limit the amount of restarts allowed for a given job.
+                Spring Batch easily allows you to do just that.
+            </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5939"></a>11.2.4.1.&nbsp;Add a start-limit</h4></div></div></div><p>
+                    <code class="literal">TODO 11</code>:  Switch to the job configuration and add a <code class="literal">start-limit</code> attribute
+                    with a value of <code class="literal">3</code> to the tasklet of the
+                    <code class="literal">diningRequestsJob</code>. This is the total
+                    number of starts allowed, including the initial start, so this limits the number of
+                    restarts allowed to 2.
+                </p><p>
+                    <code class="literal">TODO 12</code>:  Open the tests and remove the <span class="interface">@Ignored</span> from the
+                    <code class="methodname">exceedingRestartLimitPreventJobFromRunningAgain</code> method.
+                    Check what the method does: it runs the job three times, checking for failure on
+                    each run, and then asserts that another attempt at restarting results in a
+                    <code class="classname">StartLimitExceededException</code> as the root cause of the failure
+                    exception returned in the <code class="classname">JobExecution</code>. Run the tests and make
+                    sure that they all pass.
+                </p><p>
+                    When all tests pass you have completed this lab successfully. Congratulations!
+                </p><p>
+                    You might like to tidy the output by suppressing the stack-traces from the
+                    exceptions that we are expecting as part of the tests.  We don't care about
+                    them and they make the tests look like they are failing. (TODO 13).
+                    Warnings are output instead, so you can still see what is going on.
+                </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="batch-restart-java-configuration-bonus"></a>11.2.5.&nbsp;BONUS: Java configuration refactoring</h3></div></div></div><p>
+			If you have some time left, you can work on refactoring the jobs XML configurations to
+			Java configuration. We'll use the same test, without any modification in the test logic,
+			to validate the configuration refactoring works. Before moving on to the refactoring,
+			ensure the <code class="classname">BatchTests</code> passes.
+			</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e5985"></a>11.2.5.1.&nbsp;Refactor the jobs configurations to Java</h4></div></div></div><p>
+                    <code class="literal">TODO 14</code>: Change the <code class="interfacename">@SpringApplicationConfiguration</code> annotation
+                    in the <code class="classname">BatchTests</code> class to use the <code class="classname">SystemTestConfiguration</code>
+                    configuration class. The <code class="interfacename">@SpringApplicationConfiguration</code> has a <code class="code">classes</code>
+                    attribute to specify this.
+                </p><p>
+                    <code class="literal">TODO 15</code>: Take a look at the <code class="classname">SystemTestConfiguration</code> configuration class.
+                    It is the configuration entry point for the tests. It imports the infrastructure configuration class
+                    (<code class="classname">BatchExecutionConfig</code>) and the jobs configurations class (<code class="classname">BatchJobConfig</code>).
+                    It also declares an embedded <code class="interfacename">DataSource</code> bean. 
+                </p><p>
+                    <code class="literal">TODO 16</code>: Add the <code class="interfacename">@EnableBatchProcessing</code> annotation
+                    to <code class="classname">BatchExecutionConfig</code>. This declares the Spring Batch infrastructure (job repository, job launcher, etc.) 
+                    See <code class="code">batch-execution-config.xml</code> for the XML way: the annotation replaces all that XML code.
+                </p><p>
+                    <code class="literal">TODO 17</code>: It's time now to configure the <code class="code">diningRequestsJob</code> the Java way
+                    (<code class="classname">BatchJobConfig</code> class). Some of the work is already done for you: skeleton of the configuration class,
+                    most of the batch artifacts (reader, processor, writer, etc.) Here, you just need to refer to the appropriate
+                    step in the <code class="code">flow</code> method of the <code class="code">diningRequestsJob</code> method.
+                </p><p>
+                    <code class="literal">TODO 18</code>: You must now configure the <code class="code">diningRequestsStep</code>. It needs
+                    its reader, its processor, and its writer. Fortunately, all of these have bean already declared, you
+                    just need to wire them. And don't forget the start limit! 
+                </p><p>
+                    <code class="literal">TODO 19</code>: Time now to configure the skip behavior in the <code class="code">skippingDiningRequestsStep</code>
+                    bean. You need to setup the exception to skip (<code class="classname">FlatFileParseException</code>) and the skip limit.
+                    Don't hesitate to go back to the slides if you don't remember the exact syntax. 
+                </p><p>
+                    <code class="literal">TODO 20</code>: At last, add the skip listener to the step. The configuration is now complete, let's
+                    check if everything works fine.
+                </p><p>
+                    <code class="literal">TODO 21</code>: Run the <code class="classname">BatchTests</code>, it should pass if the Java configuration
+                    is correct.  
+                </p><p>Congratulations, you refactored the jobs configurations to Java!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="batch-intro-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="batch-admin-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;10.&nbsp;batch-intro: Introduction to Spring Batch&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;12.&nbsp;batch-admin: Spring Batch Admin</td></tr></table></div></body></html>

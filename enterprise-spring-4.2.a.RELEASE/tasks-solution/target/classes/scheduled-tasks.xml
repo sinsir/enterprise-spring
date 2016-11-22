@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<import resource="batch-processor-config.xml"/>
+
+	<bean id="diningBatchProcessorInvoker" class="rewards.batch.DiningBatchProcessorInvoker">
+		<constructor-arg ref="diningBatchProcessor"/>
+		<constructor-arg value="classpath:dining-input-large.csv"/>
+	</bean>
+
+	<task:scheduler id="scheduler" pool-size="1"/>
+
+	<task:scheduled-tasks scheduler="scheduler">
+		<task:scheduled ref="diningBatchProcessorInvoker" method="invoke" fixed-delay="5000"/>
+		<!-- bonus section for cron
+		<task:scheduled ref="diningBatchProcessorInvoker" method="invoke" cron="*/5 * 9-17 * * MON-FRI"/>
+		-->
+	</task:scheduled-tasks>
+
+</beans>

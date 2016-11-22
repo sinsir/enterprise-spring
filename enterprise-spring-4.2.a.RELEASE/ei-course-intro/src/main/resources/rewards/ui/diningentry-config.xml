@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<import resource="classpath:app-config.xml"/>
+	<import resource="classpath:db-config.xml"/>
+
+	<!-- TODO 08: Declare the element that registers @ManagedResource beans as MBeans. 
+	Hint: use the context namespace.
+	-->
+
+
+
+	<!-- TODO 09: Save all your work, Re-run DiningEntryUI, and launch JConsole to monitor execution.
+	(i.e. open a command prompt and run 'jconsole')
+	Use these values as test data:
+		Dining Amount: 100
+		Member credit card number: 1234123412341234
+		Merchant number: 1234567890	
+		Would you like to enter another Dining transaction? [y/n]: y
+	Everything should work, and you should see an increase of DiningEntryCount in JConsole
+	Now use these values as test data:	
+		Dining Amount: 100
+		Member credit card number: 123
+		Merchant number: 456	
+	You should see an increase of DiningEntryErrorCount in JConsole
+	-->
+
+
+	<bean class="rewards.ui.DiningEntry">
+		<constructor-arg ref="rewardNetwork"/>
+	</bean>
+
+	<!-- A transaction manager for working with connections from the given DataSource -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+</beans>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<import resource="classpath:app-config.xml"/>
+
+	<!-- xTODO 01: define a job with Id diningRequestsJob. 
+	Give the job a single step, containing a tasklet, containing a chunk.
+	Set the chunk's reader to the diningRequestsReader, the writer to the reportWriter, the commit-interval to 10.
+	Within the <chunk> element, add a <batch:processor> element.
+	Set its adapter-method to the rewardAccountFor method. 
+	Provide it with a <ref> child element that refers to the rewardNetwork bean
+	-->
+	<batch:job id="diningRequestsJob">
+		<batch:step id="step1">
+			<tasklet start-limit="3">
+				<chunk reader="diningRequestsReader" 
+						writer="reportWriter"
+						commit-interval="10" >
+					<batch:processor adapter-method="rewardAccountFor">
+						<ref bean="rewardNetwork" />
+					</batch:processor>
+				</chunk>
+			</tasklet>
+		</batch:step>
+	</batch:job>
+
+	
+	<!-- xTODO 11: add a start-limit="3" to the tasklet within the diningRequestsJob -->
+	
+	<!-- xTODO 06: Copy/paste the entire diningRequestsJob defined above, 
+	changing the ID to skippingDiningRequestsJob.
+	Also provide a unique Id for the step.
+	Configure a skip-limit of 1 in case of FlatFileParseException -->
+	<batch:job id="skippingDiningRequestsJob">
+		<batch:step id="step1Skip">
+			<tasklet>
+				<chunk reader="diningRequestsReader" 
+						writer="reportWriter"
+						commit-interval="10"
+						skip-limit="1" >
+					<skippable-exception-classes>
+						<include class="org.springframework.batch.item.file.FlatFileParseException" />
+					</skippable-exception-classes>
+					<batch:processor adapter-method="rewardAccountFor">
+						<ref bean="rewardNetwork" />
+					</batch:processor>
+				</chunk>
+				<batch:listeners>
+					<batch:listener>
+						<bean class="rewards.batch.DiningSkipListener"/>
+					</batch:listener>
+				</batch:listeners>
+			</tasklet>
+		</batch:step>
+	</batch:job>
+
+
+	<!-- TODO x09b: define a DiningSkipListener bean as a <batch:listener> inside the tasklet -->
+
+	
+	<!-- xTODO 02: set the resource property on this Reader.
+	Its value should be a SpEL expression that obtains 'input.resource.path' from the job parameters.
+	Give the bean a step scope for late binding of this value -->
+	<bean id="diningRequestsReader" class="org.springframework.batch.item.file.FlatFileItemReader" scope="step">
+		<property name="resource" value="#{jobParameters['input.resource.path']}"/>
+		<property name="strict" value="true"/>
+		<property name="lineMapper">
+			<bean class="org.springframework.batch.item.file.mapping.DefaultLineMapper">
+				<property name="lineTokenizer">
+					<bean class="org.springframework.batch.item.file.transform.DelimitedLineTokenizer">
+						<property name="names">
+							<list>
+								<value>creditCardNumber</value>
+								<value>merchantNumber</value>
+								<value>amount</value>
+								<value>date</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+				<!-- xTODO 03b: Set the fieldSetMapper property.  
+				Inject it with a new instance of the DiningFieldSetMapper.
+				You can define this as an inner bean. -->
+				<property name="fieldSetMapper">
+					<bean class="rewards.batch.DiningFieldSetMapper" />
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="reportWriter" class="rewards.batch.ReportWriter"/>
+
+</beans>

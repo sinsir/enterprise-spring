@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<import resource="classpath:app-config.xml"/>
+	<import resource="classpath:META-INF/spring/batch/common-job-config.xml"/>
+	
+	<context:mbean-export/>
+
+	<batch:job id="diningRequestsPartitionedJob" incrementer="incrementer">
+		<batch:step id="clean" next="loadData">
+			<batch:tasklet ref="cleaner" method="clean"/>
+		</batch:step>
+		<batch:step id="loadData" next="processDinings">
+			<batch:tasklet>
+				<batch:chunk reader="diningRequestsReader" writer="diningRequestsWriter" 
+				             commit-interval="10"/>
+			</batch:tasklet>
+		</batch:step>
+		<batch:step id="processDinings">
+			<batch:partition step="processDinings1" partitioner="partitioner">
+				<batch:handler grid-size="5" task-executor="taskExecutor"/>
+			</batch:partition>
+		</batch:step>
+	</batch:job>
+
+	<bean id="cleaner" class="rewards.batch.partition.Cleaner">
+		<constructor-arg ref="dataSource" />
+	</bean>	
+	
+	<bean id="taskExecutor" class="org.springframework.core.task.SimpleAsyncTaskExecutor" />
+
+	<bean id="diningRequestsWriter" class="org.springframework.batch.item.database.JdbcBatchItemWriter">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="sql" 
+		          value="insert into t_dining_request (cc_number,merchant,amount,dining_date) values(:creditCardNumber,:merchantNumber,:diningAmount,:diningDate)"/>
+		<property name="itemSqlParameterSourceProvider">
+			<bean class="org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider"/>
+		</property>
+	</bean>
+
+	<bean id="partitioner" class="rewards.batch.partition.ColumnRangePartitioner">
+		<property name="dataSource" ref="dataSource" />
+		<property name="table" value="T_DINING_REQUEST" />
+		<property name="column" value="ID" />
+	</bean>
+
+	<batch:step id="processDinings1">
+		<batch:tasklet>
+			<batch:chunk reader="itemReader" writer="reportWriter" commit-interval="5">
+				<batch:processor adapter-method="rewardAccountFor">
+					<ref bean="rewardNetwork"/>
+				</batch:processor>
+			</batch:chunk>
+		</batch:tasklet>
+	</batch:step>
+	
+	<bean id="itemReader" scope="step" class="org.springframework.batch.item.database.JdbcCursorItemReader">
+		<property name="dataSource" ref="dataSource" />
+		<property name="sql">
+			<value>
+                <![CDATA[
+                    select CC_NUMBER, MERCHANT, AMOUNT, DINING_DATE from T_DINING_REQUEST where ID >= ? and ID <= ?
+                ]]>
+			</value>
+		</property>
+		<property name="preparedStatementSetter">
+			<bean class="org.springframework.batch.core.resource.ListPreparedStatementSetter">
+				<property name="parameters">
+					<list>
+						<value>#{stepExecutionContext[minValue]}</value>
+						<value>#{stepExecutionContext[maxValue]}</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+		<property name="rowMapper">
+			<bean class="rewards.batch.partition.DiningRowMapper" />
+		</property>
+	</bean>
+	
+	<bean id="reportWriter" class="rewards.batch.partition.ReportWriter">
+		<constructor-arg ref="dataSource"/>
+	</bean>
+
+</beans>

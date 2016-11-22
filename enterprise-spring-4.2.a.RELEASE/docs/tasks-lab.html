@@ -1,0 +1,156 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>Chapter&nbsp;2.&nbsp;tasks: Tasks and Scheduling</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.70.0"><link rel="start" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="up" href="index.html" title="Enterprise Spring - Lab Documentation"><link rel="prev" href="ei-course-intro-lab.html" title="Chapter&nbsp;1.&nbsp;ei-course-intro: Introduction to Enterprise Spring"><link rel="next" href="rest-intro-lab.html" title="Chapter&nbsp;3.&nbsp;rest-intro: Introduction to RESTful Applications with Spring"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div xmlns="http://www.w3.org/TR/xhtml1/transitional" style="background-color:white;border:none;height:73px;border:1px solid black;"><a style="border:none;" href="http://www.pivotal.io" title="Pivotal"><img style="border:none;" src="images/heading-logo-lhs.jpg"></img></a><a style="border:none;" href="http://www.spring.io" title="The Spring Framework"><img style="border:none;position:absolute;padding-top:5px;right:42px;" src="images/heading-logo-rhs.jpg"></img></a></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="tasks-lab"></a>Chapter&nbsp;2.&nbsp;tasks: Tasks and Scheduling</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="tasks-lab-instructions-overview"></a>2.1.&nbsp;Introduction</h2></div></div></div><div class="orderedlist"><p class="title"><b>This lab involves two use cases:</b></p><ol type="1"><li><p>Refactoring a legacy concurrent batch processing solution to
+        take advantage of modern <span class="emphasis"><em>java.util.concurrent</em></span>
+        facilities such as <code class="classname">Executors</code>. This is a
+        development-centric use case and the intention is to improve
+        maintainability and flexibility.</p></li><li><p>Automating and scheduling batch processing. Per an internal
+        service level agreement (SLA), batch processing must occur at regular
+        intervals in order to process all dining transactions in a timely
+        fashion.</p></li></ol></div><div class="orderedlist"><p class="title"><b>Topics covered</b></p><ol type="1"><li><p>Proper use of the <span class="emphasis"><em>java.util.concurrent</em></span> API
+        introduced in Java 5.0 for easier management of multithreaded
+        applications</p></li><li><p>Scheduling application execution with with the
+        <span class="emphasis"><em>org.springframework.scheduling</em></span> API</p></li></ol></div><div class="orderedlist"><p class="title"><b>Specific subjects you'll gain experience with</b></p><ol type="1"><li><p>Convenience methods in the
+        <code class="classname">java.util.concurrent.Executors</code> class</p></li><li><p>Working with fixed-size thread pool
+        <code class="classname">java.util.concurrent.ExecutorService</code></p></li><li><p>The <code class="classname">java.util.concurrent.ExecutorService</code>
+        lifecycle</p></li><li><p>The <span class="emphasis"><em>task:</em></span> XML namespace introduced in
+        Spring 3.0</p></li></ol></div><p>Estimated completion time: 30 minutes</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="tasks-lab-quick-instructions"></a>2.2.&nbsp;Quick Instructions</h2></div></div></div><p>If you feel you have a good understanding of the material, you can
+    work with the TODOs listed in the <code class="literal">Tasks</code> view in
+    Eclipse/STS. To display them, click on Window -&gt; Show view -&gt; Tasks.
+    Alternatively, the next section contains more detailed step-by-step
+    instructions. Each task in STS is also described in more detail by a
+    corresponding section in the step-by-step instructions.</p><p>Use the following quick instructions as a guide.</p><div class="orderedlist"><ol type="1"><li><p>Complete TODO 01 through TODO 05 by refactoring <code class="literal">DiningBatchProcessorImpl</code> to use an <code class="literal">ExecutorService</code>.</p></li><li><p>Complete TODO 06 through TODO 08 in <code class="literal">scheduled-tasks.xml</code> to establish scheduled execution of the diningBatchProcess.</p></li></ol></div><p>Congratulations, you've completed this lab!</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="tasks-lab-instructions"></a>2.3.&nbsp;Instructions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e1149"></a>2.3.1.&nbsp;Refactoring Legacy Concurrent Batch Processing</h3></div></div></div><p>In the current code, you'll find a concurrent batch processing
+      solution that uses manually-created <code class="classname">Thread</code> and
+      <code class="classname">Runnable</code> instances. In this section, you'll
+      refactor this solution to take advantage of the much more flexible and
+      easy to use <code class="classname">java.util.concurrent.ExecutorService</code>
+      API.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1163"></a>2.3.1.1.&nbsp;Before you start: about the existing application</h4></div></div></div><p>
+          <span class="emphasis"><em>Use Case</em></span>
+        </p><p>One of the key integration points in the Reward Network
+        application is the nightly file transfer of batches of dining
+        transactions processed by various Credit Card Processors (CCPs) such
+        as Visa, MasterCard and Discover. Per agreement with the CCPs these
+        files are transferred via FTP and other protocols in batches of 1000
+        records or less per file. Because the volume of incoming batches can
+        be quite high, the Reward Network development team has an internal
+        service level agreement (SLA) that any batch file of 1000 records or
+        less must be processed in sixty (60) seconds or less.</p><p>To simulate a slow service, the code uses a
+        <code class="classname">SlowRewardNetwork</code> which simply sleeps some
+        milliseconds before calling the real
+        <code class="interfacename">RewardNetwork</code>. This means that
+        non-parallel execution would be really slow, but parallel execution
+        will speed things up considerably since the time is mostly spent
+        waiting.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1181"></a>2.3.1.2.&nbsp;Step 1: Review batch processing tests</h4></div></div></div><p>Open <code class="classname">DiningBatchProcessorPerformanceTests</code>
+        from within the <span class="emphasis"><em>tasks</em></span> project. This test ensures
+        that processing both a small and a large batch of input runs fast
+        enough, by reading lines from a comma-separated values (CSV) file. Run
+        the test to make sure it passes (TODO 01). Because this step involves only
+        refactoring, your job is to improve the implementation of
+        <code class="classname">DiningBatchProcessorImpl</code> without breaking this
+        test.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1195"></a>2.3.1.3.&nbsp;Step 2: Refactor
+        <code class="classname">DiningBatchProcessorImpl</code></h4></div></div></div><p>Open <code class="classname">DiningBatchProcessorImpl</code>. This
+        implementation is already using concurrency, but in a sub-optimal way:
+        <code class="classname">Thread</code> instances are manually created and
+        joined. In this step, you'll refactor to a simpler solution.</p><p>Complete <span class="emphasis"><em>TODOs 02-04</em></span> to remove low-level
+        threading control and replace it with a
+        <code class="classname">java.util.concurrent.ExecutorService</code>. </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Remember that
+            <code class="classname">java.util.concurrent.Executors</code> provides a
+            number of convenience methods for creating various kinds of
+            <code class="interfacename">ExecutorService</code> instances. For
+            example,
+            <code class="methodname">Executors.newCachedThreadPool()</code>.</p></td></tr></table></div><p> </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>When calling
+            <span class="emphasis"><em>ExecutorService.awaitTermination()</em></span>, it's fine
+            to wait forever. Use <span class="emphasis"><em>Long.MAX_VALUE</em></span> and
+            <span class="emphasis"><em>TimeUnit.SECONDS</em></span> as parameters.</p></td></tr></table></div><p> </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>Just catch the <code class="classname">InterruptedException</code>
+            and call
+            <code class="methodname">Thread.currentThread().interrupt()</code> when
+            invoking the <code class="methodname">awaitTermination</code>
+            method.</p></td></tr></table></div><p>When finished, run the test suite once again (TODO 05). If you've got
+        green, then you've successfully refactored. </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>Consider the advantages of using
+            <code class="classname">ExecutorService</code> instead of
+            <code class="classname">Thread</code>. In order to change from
+            single-threaded to multi-threaded execution, you need only to
+            switch the implementation of
+            <code class="classname">ExecutorService</code> being used. In this case,
+            you're using an <code class="classname">ExecutorService</code> backed by a
+            cached thread pool, but upon exploring the other
+            <code class="classname">ExecutorService</code> implementations, you'll
+            find that others are backed by a single thread and execute all
+            tasks synchronously and serially. <span class="emphasis"><em>'ExecutorService'
+            provides an abstraction that hides the details of threading from
+            your application.</em></span></p></td></tr></table></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e1276"></a>2.3.2.&nbsp;Automating Batch Processing</h3></div></div></div><p>Now that the <code class="classname">DiningBatchProcessor</code>
+      implementation is complete and refactored to satisfaction, in this
+      section you'll automate the batch processing to occur at regularly
+      scheduled intervals.</p><p>Per the SLA mentioned above, batch processing should kick off
+      every five seconds, seven days a week.</p><p>To implement this requirement, you'll use the new
+      <span class="emphasis"><em>task:</em></span> namespace, introduced in Spring 3.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1291"></a>2.3.2.1.&nbsp;Step 3: Review application design</h4></div></div></div><p>Many scheduled batch applications are nothing more than headless
+        java processes that are kicked off from unix cron or another similar
+        scheduling mechanism. Our scheduled process will be similar in
+        simplicity, but instead of using an external scheduler, the scheduling
+        will be built-in to the java process and kicked off in familiar
+        fashion - via a Spring
+        <code class="classname">ApplicationContext</code>.</p><p>The design of the scheduling application couldn't be simpler.
+        You'll be starting up a regular Java process that will be long-running
+        and will periodically invoke the
+        <code class="methodname">processBatch()</code> on a
+        <code class="interfacename">DiningBatchProcessor</code> instance.</p><p>This application has been started for you. Open the
+        <code class="classname">ScheduledDiningBatchProcessorBootstrap</code> class in
+        the <span class="emphasis"><em>rewards.batch</em></span> package.</p><p>Notice that this class consists of nothing more than a main
+        method that bootstraps a Spring
+        <code class="classname">ApplicationContext</code>. Open
+        <span class="emphasis"><em>scheduled-tasks.xml</em></span>, where you'll find a spring
+        bean definition and a couple of <span class="emphasis"><em>TODO</em></span>
+        markers.</p><p>The <span class="emphasis"><em>diningBatchProcessorInvoker</em></span> bean is a
+        very simple wrapper around the
+        <span class="emphasis"><em>diningBatchProcessor</em></span> bean you worked with in the
+        first section. It accepts as a constructor argument a
+        <code class="classname">Resource</code> path pointing to a batch input file.
+        When it's <span class="emphasis"><em>invoke()</em></span> method is called, it then
+        passes that resource on to the <span class="emphasis"><em>processBatch(Resource
+        batchInput)</em></span> method on the
+        <span class="emphasis"><em>diningBatchProcessor</em></span> instance.</p><p>Go ahead and take a look at
+        <code class="classname">DiningBatchProcessorInvoker</code> to see how simple
+        it is.</p><p>Once you feel comfortable with what you've seen so far, move on
+        to the next step, where you'll use the <span class="emphasis"><em>task:</em></span>
+        namespace to configure scheduling.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1356"></a>2.3.2.2.&nbsp;Step 4: Complete scheduling configuration</h4></div></div></div><p>As mentioned above, the scheduling requirement is simple. Batch
+        processing should kick off every five seconds, 24 hours a day, seven
+        days a week.</p><p>Complete <span class="emphasis"><em>TODO 06</em></span> by adding a Spring task
+        scheduler using the <span class="emphasis"><em>task:</em></span> namespace. XML
+        auto-completion will work to show you what elements are available.
+        Give the scheduler a thread pool size of
+        <span class="emphasis"><em>1</em></span>.</p><p>Complete <span class="emphasis"><em>TODO 07</em></span> by configuring a
+        <span class="emphasis"><em>task:scheduled-tasks</em></span> element containing a single
+        <span class="emphasis"><em>task:scheduled</em></span> element that calls the
+        <span class="emphasis"><em>invoke</em></span> method of the
+        <span class="emphasis"><em>diningBatchProcessorInvoker</em></span> bean every 5 seconds.
+        Consider which is more appropriate: should you use a
+        <span class="emphasis"><em>fixed-delay</em></span> of five seconds or a
+        <span class="emphasis"><em>fixed-rate</em></span>? What are the up- and downsides of
+        each?</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1395"></a>2.3.2.3.&nbsp;Step 5: Kick off automated processing</h4></div></div></div><p>(TODO 08) From the Package Explorer, right click on
+        <code class="classname">ScheduledDiningBatchProcessorBootstrap</code>, and
+        select <span class="emphasis"><em>Run As-&gt;Java Application.</em></span> If you've
+        configured everything correctly, you should begin to see output like
+        the following:</p><pre class="programlisting">INFO : rewards.batch.DiningBatchProcessorImpl - processed 1000 batch records
+INFO : rewards.batch.DiningBatchProcessorImpl - processed 1000 batch records
+INFO : rewards.batch.DiningBatchProcessorImpl - processed 1000 batch records
+				</pre><p>If you have any errors, work through them until you get the
+        desired outcome.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="d0e1410"></a>2.3.2.4.&nbsp;Step 6 (BONUS): Introduce a more sophisticated scheduling
+        requirement</h4></div></div></div><p>Let's consider a more sophisticated, and perhaps more real-world
+        scheduling scenario. In practice, it turns out that dining batches are
+        only delivered on weekdays between 9:00 am and 5:00 pm. Therefore, our
+        attempts at batch processing only need to be kicked off between those
+        hours. We'll keep the interval at every five seconds just so that you
+        can get rapid feedback.</p><p>Fortunately, you'll only need to make one simple change to meet
+        this requirement. Open <span class="emphasis"><em>scheduled-tasks.xml</em></span> once
+        again, and find your <span class="emphasis"><em>task:scheduled</em></span> element.
+        Instead of a <span class="emphasis"><em>fixed-rate</em></span> or
+        <span class="emphasis"><em>fixed-delay</em></span>, this time you'll supply a
+        <span class="emphasis"><em>cron</em></span> expression. </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="images/tip.png"></td><th align="left">Tip</th></tr><tr><td align="left" valign="top"><p>If you need help with the cron expression, refer back to the
+            slides!</p></td></tr></table></div><p>Once you've finished with this update, run the
+        <code class="classname">ScheduledDiningBatchProcessorBootstrap</code> once
+        more. If you're running this on a weekday between 9am and 5pm, you
+        should see the very same output. If not, you should see
+        nothing.</p><p>Finally, try updating the cron expression such that it excludes
+        today (for example: if you're doing this lab on a Tuesday, update the
+        cron expression to only run on Fridays). Run the application a final
+        time, and you should notice that there is no output.</p><p>You've completed this lab!</p></div></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ei-course-intro-lab.html">Prev</a>&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right">&nbsp;<a accesskey="n" href="rest-intro-lab.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;1.&nbsp;ei-course-intro: Introduction to Enterprise Spring&nbsp;</td><td width="20%" align="center"><span style="color:white;font-size:90%;"><a href="http://www.spring.io" title="The Spring Framework">Spring By Pivotal</a></span></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;3.&nbsp;rest-intro: Introduction to RESTful Applications with Spring</td></tr></table></div></body></html>

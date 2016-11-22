@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:int="http://www.springframework.org/schema/integration" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int-xml="http://www.springframework.org/schema/integration/xml"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/integration
+            http://www.springframework.org/schema/integration/spring-integration.xsd
+            http://www.springframework.org/schema/integration/xml
+            http://www.springframework.org/schema/integration/xml/spring-integration-xml.xsd">
+
+
+	<int:channel id="xmlDinings" />
+
+	<int-xml:unmarshalling-transformer unmarshaller="diningRequestUnmarshaller"
+		input-channel="xmlDinings" output-channel="dinings"/>
+
+	<bean id="diningRequestUnmarshaller" class="rewards.messaging.DiningRequestUnmarshaller" />
+
+	<int-xml:marshalling-transformer marshaller="rewardConfirmationMarshaller"
+		input-channel="confirmations" output-channel="xmlConfirmations"
+		result-transformer="resultToStringTransformer"/>
+
+	<bean id="rewardConfirmationMarshaller" class="rewards.messaging.RewardConfirmationMarshaller"/>
+
+	<bean id="resultToStringTransformer"
+		  class="org.springframework.integration.xml.transformer.ResultToStringTransformer" />
+
+	<int:channel id="xmlConfirmations">
+		<int:queue capacity="10" />
+	</int:channel>
+
+</beans>
